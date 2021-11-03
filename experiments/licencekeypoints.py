@@ -4,21 +4,19 @@ import rospy
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-import cv2 as cv
-
 import cv2
 from cv2.xfeatures2d import SIFT_create
 import sys
 import numpy as np
 
 
-def proccess_image(self, data):
-    self.img_dim = data.width, data.height
-    cv_image = self.bridge.imgmsg_to_cv2(data, desired_encoding='mono8')
+def proccess_image(data):
+    img_dim = data.width, data.height
+    cv_image = bridge.imgmsg_to_cv2(data, desired_encoding='bgr8')
     gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
     kp = sift.detect(gray,None)
 
-    img=cv2.drawKeypoints(gray,kp)
+    img=cv2.drawKeypoints(gray, kp, gray)
     cv2.imshow('a', img)
     cv2.waitKey(1)
     
@@ -27,7 +25,7 @@ if __name__ == '__main__':
     rospy.init_node('line_follower', anonymous=True)
 
     sift = SIFT_create()
-
+    bridge = CvBridge()
     rospy.Subscriber("/R1/pi_camera/image_raw", Image, proccess_image)
 
     # spin() simply keeps python from exiting until this node is stopped
