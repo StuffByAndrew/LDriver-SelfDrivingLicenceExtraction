@@ -5,3 +5,4 @@
 *.jpeg
 *.png
 img_cmd_data
+experiments/data/
