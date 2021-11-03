@@ -16,13 +16,14 @@ class ImgCmdCollector:
         if not os.path.exists(str(self.data_dir)):
             os.makedirs(str(self.data_dir))
         self.commands = self.load_cmds()
-        self.cur_img_id = max(self.commands.keys()) + 1 if self.commands.keys() else 1
+        print(self.commands.keys())
+        self.cur_img_id = max(list(map(int,self.commands.keys()))) + 1 if self.commands.keys() else 1
         print('started collecting at index {}'.format(self.cur_img_id))
 
     def load_cmds(self):
         try:
-            with open(str(self.data_dir/'commands.json'), 'r') as f:
-                commands = json.load(f.read())
+            with open(str(self.data_dir/'commands.json'), 'w+') as f:
+                commands = json.load(f)
                 print('loaded commands file')
         except:
             commands = {}
@@ -38,9 +39,17 @@ class ImgCmdCollector:
         img_f = str(self.data_dir/'{}.png'.format(self.cur_img_id))
         print('saving {}'.format(img_f))
         cv2.imwrite('./'+img_f, cv_image)
+        pose = odom.pose.pose
+        twist = odom.twist.twist
         self.commands[self.cur_img_id] = {
             'linear': cmd.linear.x,
-            'angular': cmd.angular.z
+            'angular': cmd.angular.z,
+            'state': {
+                'x': -pose.position.y,
+                'y': pose.position.x,
+                'linear': twist.linear.x,
+                'angular': twist.angular.z
+            }
         }
         self.save_cmds(self.commands)
         print('Recorded: {}'.format(self.cur_img_id))

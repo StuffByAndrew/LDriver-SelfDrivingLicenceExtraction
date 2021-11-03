@@ -1,0 +1,18 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/home/fizzer/license_enph353/devel/include/**",
+        "/opt/ros/melodic/include/**",
+        "/home/fizzer/license_enph353/src/2020_competition/enph353/enph353_gazebo/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ],
+  "version": 4
+}

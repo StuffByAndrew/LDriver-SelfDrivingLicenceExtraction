@@ -1,0 +1,7 @@
+/build
+/devel
+/log
+*.jpg
+*.jpeg
+*.png
+img_cmd_data
