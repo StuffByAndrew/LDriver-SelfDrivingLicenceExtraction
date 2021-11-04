@@ -6,3 +6,4 @@
 *.png
 img_cmd_data
 experiments/data/
+!test_images/*
