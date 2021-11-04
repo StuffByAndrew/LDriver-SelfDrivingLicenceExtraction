@@ -4,7 +4,7 @@ import numpy as np
 import cv2 as cv
 import time
 
-img = cv.imread('experiments/closeup.png',cv.IMREAD_COLOR)
+img = cv.imread('test_images/closeup.png',cv.IMREAD_COLOR)
 img = cv.medianBlur(img,5)
 
 # Convert BGR to HSV
@@ -47,6 +47,8 @@ cv.setTrackbarPos('LowerS',window_name, ls)
 
 cv.createTrackbar('LowerV',window_name,0,255,nothing)
 cv.setTrackbarPos('LowerV',window_name, lv)
+
+#cv.createButton('Save HSV', window_name)
 
 font = cv.FONT_HERSHEY_SIMPLEX
 
