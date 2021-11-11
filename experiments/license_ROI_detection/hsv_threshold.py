@@ -1,8 +1,7 @@
 import cv2 
 import numpy as np
 
-def hsv_threshold(image_file):
-    img = cv2.imread(image_file, cv2.IMREAD_COLOR)
+def hsv_threshold(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     cv2.medianBlur(img,5)
 
