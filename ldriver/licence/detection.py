@@ -161,26 +161,32 @@ def find_licence(image):
 
 if __name__ == '__main__':
     # Testing
-    orig_img = cv2.imread('./experiments/test_images/74.png')
-    cv2.imshow('testing', orig_img)
-    cv2.waitKey(0)
+    import glob
+    # orig_img = cv2.imread('./experiments/test_images/74.png')
+    for img in glob.glob('experiments/test_images/*.png'):
+        orig_img = cv2.imread(img)
+        cv2.imshow('testing', orig_img)
+        cv2.waitKey(0)
 
-    thresh = hsv_threshold(orig_img)
-    thresh = dilate_erode(thresh)
-    cv2.imshow('testing', thresh)
-    cv2.waitKey(0)
+        thresh = hsv_threshold(orig_img)
+        thresh = dilate_erode(thresh)
+        cv2.imshow('testing', thresh)
+        cv2.waitKey(0)
 
-    conts, img = rect_contours(thresh, orig_img)
-    cv2.imshow('testing', img)
-    cv2.waitKey(0)
+        conts, img = rect_contours(thresh, orig_img)
+        cv2.imshow('testing', img)
+        cv2.waitKey(0)
 
-    pts, img = combine_rects(conts, img)
-    cv2.imshow('testing', img)
-    cv2.waitKey(0)
+        pts, img = combine_rects(conts, img)
+        cv2.imshow('testing', img)
+        cv2.waitKey(0)
 
-    new_img = warp_rect(orig_img, pts)
-    cv2.imshow('testing', new_img)
-    cv2.waitKey(0)
+        try:
+            new_img = warp_rect(orig_img, pts)
+            cv2.imshow('testing', new_img)
+            cv2.waitKey(0)
+        except:
+            print('no licence')
 
     from utils import BoundingBoxWidget
     bbwidget = BoundingBoxWidget(new_img)
