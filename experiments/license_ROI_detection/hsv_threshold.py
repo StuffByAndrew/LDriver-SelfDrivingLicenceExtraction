@@ -3,7 +3,7 @@ import numpy as np
 
 def hsv_threshold(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    cv2.medianBlur(img,5)
+    cv2.medianBlur(hsv,5)
 
     uh = 0
     us = 0
