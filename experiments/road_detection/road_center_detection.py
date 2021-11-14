@@ -44,7 +44,12 @@ def find_center(image):
         image_height, image_width, _ = image.shape
         return image_width//2, image_height//2
     return cx, cy
-    
+
+def get_roadcolor_center(image):
+    center_image = mask(image, 0.3)
+    center_image = hsv_threshold(center_image, lv=75, uv=95)
+    center_image = threshold(center_image, lower_threshold=240, upper_threshold=255)
+    return find_center(center_image)
 
 if __name__ == "__main__":
     file = "experiments\\test_images\\distant.png"
