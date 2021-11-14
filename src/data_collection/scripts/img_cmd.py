@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import cv_bridge
 import message_filters
 from sensor_msgs.msg import Image

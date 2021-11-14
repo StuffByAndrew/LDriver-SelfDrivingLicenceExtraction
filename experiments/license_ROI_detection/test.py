@@ -15,20 +15,25 @@ def dilate_erode(img):
     # convolved and third parameter is the number
     # of iterations, which will determine how much
     # you want to erode/dilate a given image.
-    img = cv2.erode(img, kernel3, iterations=2)
     img = cv2.dilate(img, kernel5, iterations=1)
+    img = cv2.erode(img, kernel5, iterations=1)
+    img = cv2.erode(img, kernel3, iterations=2)
+    img = cv2.dilate(img, kernel5, iterations=2)
     return img
 
-
-for img in glob.glob('experiments/test_images/*.png'):
-    orig_img = cv2.imread(img)
-    img = hsv(orig_img)
-    img = dilate_erode(img)
-    cnt_img, pts = rcont(img, orig_img)
-    if pts.size:
-        out=np.float32([[300,0],[0,0],[0,300],[300,300]])
-        plate = warp_rect(orig_img, pts, out,size=(300,300))
-        cv2.imshow('test', plate)
+if __name__ == '__main__':
+    for img in glob.glob('experiments/test_images/*.png'):
+        orig_img = cv2.imread(img)
+        img = hsv(orig_img)
+        img = dilate_erode(img)
+        cnt_img, pts = rcont(img, orig_img)
+        cv2.imshow('thresholded', img)
         cv2.waitKey(0)
-    cv2.imshow('test', cnt_img)
-    cv2.waitKey(0)
+        cv2.imshow('contours', cnt_img)
+        cv2.waitKey(0)
+        if len(pts):
+            out=np.float32([[300,0],[0,0],[0,300],[300,300]])
+            plate = warp_rect(orig_img, pts, out,size=(300,300))
+            cv2.imshow('plate', plate)
+            cv2.waitKey(0)
+    
