@@ -1,7 +1,23 @@
 import cv2 
 import numpy as np
 
-def hsv_threshold(img):
+"""for license plates:
+uh = 0
+us = 0
+uv = 120
+lh = 0
+ls = 0
+lv = 89
+
+for road detection:
+uh = 0
+us = 0
+uv = 95
+lh = 0
+ls = 0
+lv = 75
+"""
+def hsv_threshold(img, lh, uh, ls, us, lv, uv):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     cv2.medianBlur(hsv,5)
 
