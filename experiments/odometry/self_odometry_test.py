@@ -9,21 +9,6 @@ import matplotlib.pyplot as plt
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 from geometry_msgs.msg import Twist
-
-# Pose/Twist
-# position/linear: 
-#   x: x
-#   y: y
-#   z: z
-# orientation/angular: 
-#   x: x
-#   y: y
-#   z: z
-#   w: w
-
-path = "/home/fizzer/Desktop/enph353DrivingLicenceExtraction/experiments/data/"
-csv_file, csv_writer = None, None
-
 class CurrentPosition():
     def __init__(self):
         self.yaw = 0 # radians
@@ -63,12 +48,12 @@ def open_csv():
     return csv_file, csv_writer
 
 if __name__ == '__main__':
+    path = "/home/fizzer/Desktop/enph353DrivingLicenceExtraction/experiments/data/"
+    csv_file, csv_writer = open_csv()
     current_position = CurrentPosition()
     min_interval = 0.2 # minimum required time between data entries
     last_updated = 0
     prev_time = 0
-    csv_file, csv_writer = open_csv()
-    current_position = CurrentPosition()
     rospy.init_node('line_follower', anonymous=True)
     rospy.Subscriber("/R1/cmd_vel", Twist, data_collection, queue_size=1)
     rospy.spin()
