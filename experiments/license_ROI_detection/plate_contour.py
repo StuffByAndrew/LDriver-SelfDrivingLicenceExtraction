@@ -25,38 +25,33 @@ def rect_contours(img, orig_img):
     # cv2.waitKey(0)
 
     contours = sorted(contours, key=cv2.contourArea, reverse = True)[:5]
-
-    min_rect_area = 2500
+    min_rect_area = 800
     screenCnts = np.array(list(
         filter(lambda c: cv2.contourArea(c) > min_rect_area,
         filter(lambda x: len(x)==4, 
         map(approx_rect, 
         contours)))))
-    allPts = screenCnts.reshape(-1, screenCnts.shape[-1]) if screenCnts.size else screenCnts
-    allPts = sorted(allPts, key=itemgetter(1))
-    rectPts = np.int32(allPts[:4:2]+allPts[-4::2])
-    linePts = rectPts.reshape((-1, 1, 2))
-
+    
     # Print contour areas for testing
     # contour_areas = list(map(cv2.contourArea, screenCnts))
     # print(contour_areas)
-
-    # Old code
-    # screenCnts = []
-    # for c in contours:
-        
-    #     peri = cv2.arcLength(c, True)
-    #     approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-    
-    #     if len(approx) == 4:
-    #         screenCnts.append(approx)
-    #         print(approx)
-
-    # Drawing Contours
     cv2.drawContours(orig_img, screenCnts, -1, (0, 0, 255), 3)
-    cv2.polylines(orig_img, linePts, True, (0, 255 ,0), 3)
+
+    # Combine the two triangles if there is need
+    rectPts = []
+    if screenCnts.shape[0] > 2:
+        allPts = screenCnts.reshape(-1, screenCnts.shape[-1]) if screenCnts.size else screenCnts
+        allPts = sorted(allPts, key=itemgetter(1))
+        rectPts = np.int32(allPts[:4:2]+allPts[-4::2])
+        linePts = rectPts.reshape((-1, 1, 2))
+        cv2.polylines(orig_img, linePts, True, (0, 255 ,0), 3)
+
     return orig_img, rectPts
+
+def rect_sort(pts):
+    ''':param: pts: numpy list of xy coordinates'''
     
+
 def warp_rect(img, in_pts, out_pts, size):
     '''in_pts and out_pts must be of type np.float32 np.int does not work'''
     # To match all points by sorting cartesianly
