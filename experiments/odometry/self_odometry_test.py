@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 from geometry_msgs.msg import Twist
+
 class CurrentPosition():
     def __init__(self):
         self.yaw = 0 # radians
@@ -18,8 +19,8 @@ class CurrentPosition():
     
     def set_velocities(self, linear_x, omega):
         self.omega = omega
-        self.x = -linear_x*np.sin(self.yaw)
-        self.y = linear_x*np.cos(self.yaw)
+        self.x_vel = -linear_x*np.sin(self.yaw)
+        self.y_vel = linear_x*np.cos(self.yaw)
     
     def time_step(self, interval):
         self.x += self.x_vel * interval
