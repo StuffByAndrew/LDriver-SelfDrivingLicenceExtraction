@@ -14,7 +14,7 @@ class CurrentPosition():
         self.yaw = 0 # radians
         self.omega = 0 # radians per secodn
         self.x, self.y = 0, 0 # meters
-        self.x_vel, self.y_vel # meters per second
+        self.x_vel, self.y_vel = 0, 0 # meters per second
     
     def set_velocities(self, linear_x, omega):
         self.omega = omega
