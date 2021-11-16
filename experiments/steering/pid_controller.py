@@ -34,7 +34,7 @@ def pid_steering(image_data):
     except CvBridgeError as e:
         print(e)
     image_width = image.shape[1]
-    if counter <= 32:
+    if counter <= 50:
         centroid = get_bottom_left_line_center(image)
         if centroid:
             PID.calculate_PID(192, centroid[0])
@@ -57,8 +57,8 @@ def pid_steering(image_data):
 
 if __name__ == "__main__":
     bridge = CvBridge()
-    base_speed = 0.20
-    PID = PID_Control(0.005, 0.000, 0.000, 10, 0.5)
+    base_speed = 0.12
+    PID = PID_Control(0.004, 0.000, 0.000, 10, 0.5)
     target = 1088
     counter = 0
 
