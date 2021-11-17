@@ -8,3 +8,4 @@ img_cmd_data
 img_cmd_data/
 experiments/data/
 !*/test_images/*
+*.pyc
