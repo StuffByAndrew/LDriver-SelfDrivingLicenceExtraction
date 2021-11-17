@@ -71,6 +71,7 @@ def combine_rects(contours, orig_img=None):
     out_img = orig_img.copy() if orig_img is not None  else None
     # 
     rect_pts = np.array([])
+    print(len(contours))
     if contours.shape[0] > 2:
         all_pts = contours.reshape(-1, contours.shape[-1]) if contours.size else contours
         all_pts = sorted(all_pts, key=itemgetter(1))

@@ -1,3 +1,4 @@
+from os import stat
 from typing import NamedTuple
 from tensorflow.keras import layers, models, optimizers
 import string
@@ -30,6 +31,11 @@ class LicenceOCR:
         preds = [ALL_LETTERS[np.argmax(p)] for p in preds_oh]
         print(preds)
 
+    @staticmethod
+    def process_letter(img):
+        # increase contrast
+        pass
+
     def vshow(self, imgs):
         if self.vtest:
             for img in imgs:
@@ -40,7 +46,7 @@ class LicenceOCR:
         # Create a new model instance
         model = self.create_model()
         # Restore the weights
-        model.load_weights('./weights/best')
+        model.load_weights('weights/best')
         return model
     
     def create_model(self):

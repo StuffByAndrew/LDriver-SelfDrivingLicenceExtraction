@@ -14,7 +14,7 @@ class CurrentPosition():
         self.yaw = 0 # radians
         self.omega = 0 # radians per secodn
         self.x, self.y = 0, 0 # meters
-        self.x_vel, self.y_vel # meters per second
+        self.x_vel, self.y_vel = 0, 0 # meters per second
     
     def set_velocities(self, linear_x, omega):
         self.omega = omega
@@ -42,13 +42,14 @@ def data_collection(data):
 
 def open_csv():
     filename = datetime.now().strftime("%H:%M:%S_%d-%m-%y")
-    csv_file = open(path + filename + ".csv", 'w')
+    csv_file = open(path + filename + ".csv", 'w+')
     csv_writer = csv.writer(csv_file)
     csv_writer.writerow(["x_origin", "y_origin", "x_velocity", "y_velocity"])
     return csv_file, csv_writer
 
 if __name__ == '__main__':
-    path = "/home/fizzer/Desktop/enph353DrivingLicenceExtraction/experiments/data/"
+    # path = "/home/fizzer/Desktop/ros_ws/experiments/data/"
+    path = ""
     csv_file, csv_writer = open_csv()
     current_position = CurrentPosition()
     min_interval = 0.2 # minimum required time between data entries
