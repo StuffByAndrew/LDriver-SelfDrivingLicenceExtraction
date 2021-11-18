@@ -1,4 +1,11 @@
 import cv2
+import numpy as np
+
+def sharpen(img):
+    sharp_k = np.array([[0, -1, 0],
+                        [-1, 5,-1],
+                        [0, -1, 0]])
+    return cv2.filter2D(src=img, ddepth=-1, kernel=sharp_k)
 
 #################################################
 # Inspired by https://stackoverflow.com/questions/55149171/how-to-get-roi-bounding-box-coordinates-with-mouse-clicks-instead-of-guess-che

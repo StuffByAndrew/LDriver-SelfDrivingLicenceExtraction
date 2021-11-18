@@ -1,9 +1,9 @@
 from os import stat
-from typing import NamedTuple
 from tensorflow.keras import layers, models, optimizers
 import string
 import cv2
 import numpy as np
+from utils import sharpen
 
 ALL_LETTERS = (list(string.ascii_uppercase)) + list(map(str,range(0,10)))
 
@@ -17,7 +17,7 @@ class LicenceOCR:
         [170, 222, 217, 250],
         [221, 269, 217, 250]
     )
-    img_shape = (50, 50, 3)
+    img_shape = (50, 50, 1)
 
     def __init__(self, vtesting=False):
         self.vtest = vtesting
@@ -25,7 +25,15 @@ class LicenceOCR:
 
     def read_licence(self, img):
         letter_rois = [img[y1:y2,x1:x2] for x1,x2,y1,y2 in self.lbbox]
-        resized_letters = np.array(list(map(lambda img : cv2.resize(img, self.img_shape[:2]), letter_rois)))
+        
+        resized_letters = np.array(list(
+            map(sharpen,
+            map(lambda img : cv2.cvtColor(img, cv2.COLOR_BGR2GRAY),
+            map(lambda img : cv2.resize(img, self.img_shape[:2]), letter_rois)))))
+
+        # Reshape
+        a = self.img_shape
+        resized_letters = resized_letters.reshape(resized_letters.shape[0], a[0], a[1], a[2])
         self.vshow(resized_letters)
         preds_oh = self.model.predict(resized_letters)
         preds = [ALL_LETTERS[np.argmax(p)] for p in preds_oh]
@@ -83,7 +91,6 @@ if __name__ == '__main__':
         # orig_img = cv2.imread('./experiments/test_images/74.png')
         try:
             licence = find_licence(orig_img)
-            ocr.read_licence(licence)
         except:
             print('no licence')
-        
+        ocr.read_licence(licence)  
