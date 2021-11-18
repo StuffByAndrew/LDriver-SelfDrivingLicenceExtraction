@@ -1,0 +1,6 @@
+<launch>
+    <!-- <include file="$(find enph353_utils)/launch/sim.launch"/> -->
+    <!-- <node pkg='$(find enph353_utils)' type='run_sim.sh' name='world_sim' output="screen"/> -->
+    <node pkg="controller" type="time_trials.py" name="driver"/>
+    <node pkg="controller" type="licence_detection.py" name="licence"/>
+</launch>
