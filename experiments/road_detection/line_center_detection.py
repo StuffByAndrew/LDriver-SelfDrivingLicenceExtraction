@@ -29,7 +29,7 @@ def line_detection(image, point_threshold, min_line_length, max_line_gap):
     return cv2.HoughLinesP(image, rho=1, theta=np.pi/180, threshold=point_threshold, 
     minLineLength=min_line_length, maxLineGap=max_line_gap)
 
-def filter_lines(lines, min_slope):
+def line_imagefilter_lines(lines, min_slope):
     if lines is None:
         return lines
     return filter(lambda line: abs(slope(line)) >= min_slope, lines)
