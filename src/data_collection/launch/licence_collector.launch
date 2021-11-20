@@ -1,0 +1,5 @@
+<launch>
+    <!-- <include file="$(find enph353_utils)/launch/sim.launch"/> -->
+    <!-- <node pkg='$(find enph353_utils)' type='run_sim.sh' name='world_sim' output="screen"/> -->
+    <node pkg="data_collection" type="letter_collector" name="lettercollector"/>
+</launch>

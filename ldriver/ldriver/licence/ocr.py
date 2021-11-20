@@ -6,10 +6,9 @@ import numpy as np
 from utils import sharpen
 from matplotlib import pyplot as plt
 
-ALL_LETTERS = (list(string.ascii_uppercase)) + list(map(str,range(0,10)))
+ALL_LETTERS = list(string.ascii_uppercase) + list(map(str,range(0,10)))
 
 class LicenceOCR:
-    #list of bbox locations [x1, x2, y1, y2]
     img_shape = (50, 50, 1)
 
     def __init__(self, vtesting=False, experimental=False):

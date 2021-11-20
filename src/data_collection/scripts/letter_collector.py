@@ -7,6 +7,7 @@ from sensor_msgs.msg import Image
 import rospy
 from pathlib2 import Path
 import os
+import logging
 
 class ImgCollector:
     data_dir = Path('plate_data')
@@ -14,22 +15,29 @@ class ImgCollector:
         if not os.path.exists(str(self.data_dir)):
             os.makedirs(str(self.data_dir))
         self.cur_img_id = 0
+        self.prev = None
+        self.best_of_group = None
 
     def proccess_image(self, data):
         cv_img = bridge.imgmsg_to_cv2(data, desired_encoding='bgr8')
-        try:
-            lp = LicencePlate(cv_img)
-            if lp.valid:
-                letters = LicenceOCR.process_letters(lp.letters)
+        lp = LicencePlate(cv_img)
+        if lp.valid:
+            if not self.prev:
+                self.prev = lp
+            if lp == self.prev:
+                self.best_of_group = lp if lp.blur > self.prev.blur else self.prev
+            else:
+                letters = LicenceOCR.process_letters(self.best_of_group.letters)
                 for l in letters:
                     img_f = str(self.data_dir/'{}.png'.format(self.cur_img_id))
-                    cv2.imwrite('./'+img_f, plate)
-                self.cur_img_id += 1
-                print('saved{}'.format(img_f))
-        except:
-            pass
+                    cv2.imwrite('./'+img_f, l)
+                    self.cur_img_id += 1
+                    print('saved {}'.format(img_f))
+            self.prev = lp
+
 
 if __name__ == '__main__':
+    logging.getLogger("").setLevel(logging.DEBUG)
     rospy.init_node('licensedriver', anonymous=True)
     bridge = CvBridge()
     collector = ImgCollector()

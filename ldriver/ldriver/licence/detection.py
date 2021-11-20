@@ -1,9 +1,9 @@
 import cv2
+from skimage.measure import compare_nrmse
 import imutils
 import numpy as np
 from operator import itemgetter
 
-from numpy.lib.arraysetops import unique
 from hsv_config import licence_ranges
 from functools import reduce
 import logging
@@ -175,6 +175,18 @@ def dilate_erode(img):
     img = cv2.dilate(img, kernel5, iterations=2)
     return img
 
+def measure_blur(img):
+    """Measures the blurriness of an image using the variation of the Laplacian inspired by
+    Pech-Pacheco et al. 2000 (optica.csic.es/papers/icpr2k.pdf)
+
+    Args:
+        img (numpy.ndarray): grayscale image matrix
+
+    Returns:
+        float: relative quantification of blurriness in an image
+    """
+    return cv2.Laplacian(img, cv2.CV_64F).var()
+
 class LicencePlate(object):
     _best_plates_ever = {}
     _lbbox = (
@@ -184,7 +196,7 @@ class LicencePlate(object):
         [75, 127, 217, 250],
         [170, 222, 217, 250],
         [221, 269, 217, 250]
-    )
+    ) #list of bbox locations [x1, x2, y1, y2]
     _parking_template = cv2.imread(str(files(ldriver.data.licence).joinpath('P.png')), cv2.IMREAD_UNCHANGED)
     _match_threshold = 0.15
 
@@ -207,6 +219,10 @@ class LicencePlate(object):
         else:
             self.img = img
 
+        self.blur = measure_blur(img)
+
+    def __bool__(self):
+        return self.valid
 
     @classmethod
     def check_valid(cls, img):
@@ -237,17 +253,24 @@ class LicencePlate(object):
         else:
             print('no licence')
         return detected, new_img
+    
+    _compare_thresh = 0.17
+    def __eq__(self, other):
+        diff = compare_nrmse(self.img, other.img)
+        logging.debug('similarity: {}'.format(diff))
+        return diff < self._compare_thresh
 
 if __name__ == '__main__':
+    logging.getLogger("").setLevel(logging.DEBUG)
     # Testing
     import glob
     # orig_img = cv2.imread('./experiments/test_images/74.png')
     for img in glob.glob('experiments/test_images/*.png'):
-        lp = LicencePlate(cv2.imread(img), binary=True)
+        lp = LicencePlate(cv2.imread(img))
         cv2.imshow('testing', lp.img)
         cv2.waitKey(0)
-        print(lp.valid)
-        logging.info('{}\n------------------------------------'.format(lp.valid))
+        logging.info('{}'.format(measure_blur(lp.img)))
+        logging.debug('{}\n------------------------------------'.format(lp.valid))
         # orig_img = cv2.imread(img)
         # cv2.imshow('testing', orig_img)
         # cv2.waitKey(0)
