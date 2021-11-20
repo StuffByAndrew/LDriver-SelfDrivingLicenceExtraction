@@ -4,32 +4,23 @@ import string
 import cv2
 import numpy as np
 from utils import sharpen
+from matplotlib import pyplot as plt
 
 ALL_LETTERS = (list(string.ascii_uppercase)) + list(map(str,range(0,10)))
 
 class LicenceOCR:
     #list of bbox locations [x1, x2, y1, y2]
-    lbbox = (
-        [26, 153, 116, 192],
-        [147, 292, 115, 189],
-        [23, 82, 217, 250],
-        [75, 127, 217, 250],
-        [170, 222, 217, 250],
-        [221, 269, 217, 250]
-    )
     img_shape = (50, 50, 1)
 
-    def __init__(self, vtesting=False):
+    def __init__(self, vtesting=False, experimental=False):
         self.vtest = vtesting
+        self.exper = experimental
         self.model = self.load_weights()
 
-    def read_licence(self, img):
-        letter_rois = [img[y1:y2,x1:x2] for x1,x2,y1,y2 in self.lbbox]
+    def read_licence(self, licence):
+        letter_rois = licence.letters
         
-        resized_letters = np.array(list(
-            map(sharpen,
-            map(lambda img : cv2.cvtColor(img, cv2.COLOR_BGR2GRAY),
-            map(lambda img : cv2.resize(img, self.img_shape[:2]), letter_rois)))))
+        resized_letters = self.process_letters(letter_rois)
 
         # Reshape
         a = self.img_shape
@@ -39,16 +30,28 @@ class LicenceOCR:
         preds = [ALL_LETTERS[np.argmax(p)] for p in preds_oh]
         print(preds)
 
-    @staticmethod
-    def process_letter(img):
-        # increase contrast
-        pass
+    @classmethod
+    def process_letters(cls, letters):
+        return np.array(list(map(lambda letters : cv2.resize(letters, cls.img_shape[:2]), letters)))
 
     def vshow(self, imgs):
         if self.vtest:
             for img in imgs:
+                img = np.squeeze(img, axis=2)
                 cv2.imshow('vtest', img)
                 cv2.waitKey(0)
+                if self.exper:
+                    ret,th1 = cv2.threshold(img,60,255,cv2.THRESH_BINARY_INV)
+                    th2 = cv2.adaptiveThreshold(img,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,15,2)
+                    th3 = cv2.adaptiveThreshold(img,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY_INV,15,2)
+                    titles = ['Original Image', 'Global Thresholding (v = 60  )', 'Adaptive Mean Thresholding', 'Adaptive Gaussian Thresholding']
+                    images = [img, th1, th2, th3]
+                    for i in range(4):
+                        plt.subplot(2,2,i+1),plt.imshow(images[i],'gray')
+                        plt.title(titles[i])
+                        plt.xticks([]),plt.yticks([])
+                    plt.show()
+                    self .histogram(img)
 
     def load_weights(self):
         # Create a new model instance
@@ -79,18 +82,25 @@ class LicenceOCR:
                             metrics=['acc'])
         return conv_model
 
+    @staticmethod
+    def histogram(gray_img):
+        n, bins, patches = plt.hist(gray_img.flatten(), bins=50)
+        plt.show()
+
 if __name__ == '__main__':
-    from detection import find_licence
+    from detection import LicencePlate
     import glob
-    ocr = LicenceOCR(vtesting=True)
+    ocr = LicenceOCR(vtesting=True, experimental=False)
     for img in glob.glob('experiments/test_images/*.png'):
         orig_img = cv2.imread(img)
         # cv2.imshow('vtest', orig_img)
         # cv2.waitKey(0)
-
+  
         # orig_img = cv2.imread('./experiments/test_images/74.png')
-        try:
-            licence = find_licence(orig_img)
-        except:
-            print('no licence')
-        ocr.read_licence(licence)  
+        # found, licence = LicencePlate.find_licence(orig_img)
+        # if found:
+        #     ocr.read_licence(licence)
+
+        lp = LicencePlate(orig_img)
+        if lp.valid:
+            ocr.read_licence(lp)

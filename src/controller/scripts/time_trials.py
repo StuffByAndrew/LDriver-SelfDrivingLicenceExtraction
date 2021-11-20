@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 # import licence.detection as ld
 import cv2
-from ldriver.licence import detection
 from ldriver.steering.pid_controller import pid_steering, PID_Control
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
