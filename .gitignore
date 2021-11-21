@@ -9,3 +9,6 @@ img_cmd_data/
 experiments/data/
 !*/test_images/*
 *.pyc
+plate_data/*
+plate_data
+*.json

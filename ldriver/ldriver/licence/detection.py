@@ -1,9 +1,14 @@
 import cv2
+from skimage.measure import compare_nrmse
 import imutils
 import numpy as np
 from operator import itemgetter
+
 from hsv_config import licence_ranges
 from functools import reduce
+import logging
+import ldriver.data.licence
+from importlib_resources import files
 
 def hsv_threshold(img):
     """ Thresholds img by hsv range defined in hsv_config
@@ -57,8 +62,33 @@ def rect_contours(img, orig_img=None, min_area=800):
 
     return best_conts, out_img
 
-def combine_rects(contours, orig_img=None):
-    """Combine the two rectangles if there is need
+def combine_rects(contours, thresh=0.3):
+    if len(contours)==0:
+        return contours
+    contours = np.resize(contours, (contours.shape[0],4,2))
+    size = np.max(contours)
+    black = np.zeros((size, size))
+    unique_boxes = [contours[0]]
+    for cont in contours:
+        new = True
+        for b in unique_boxes:
+            A1, A2= cv2.contourArea(cont), cv2.contourArea(b)
+
+            b1 = cv2.fillPoly(black.copy(), pts = [cont], color =(255,255,255))
+            b2 = cv2.fillPoly(black.copy(), pts = [b], color =(255,255,255))
+
+            intersection = cv2.bitwise_and(b1, b2)
+            inter_area = np.count_nonzero(intersection)
+
+            if inter_area / A1 > thresh:
+                new = False
+                break
+        if new:
+            unique_boxes.append(cont)
+    return np.array(unique_boxes)
+
+def combine_plate(contours, orig_img=None):
+    """Combine the two rectangles that represents the parts of a licence plate
 
     Args:
         contours (numpy.ndarray): Opencv2 style contours
@@ -71,11 +101,15 @@ def combine_rects(contours, orig_img=None):
     out_img = orig_img.copy() if orig_img is not None  else None
     # 
     rect_pts = np.array([])
-    print(len(contours))
-    if contours.shape[0] > 2:
+    if contours.shape[0] >= 2:
         all_pts = contours.reshape(-1, contours.shape[-1]) if contours.size else contours
-        all_pts = sorted(all_pts, key=itemgetter(1))
-        rect_pts = np.int32(all_pts[:4:2]+all_pts[-4::2])
+        N = all_pts.shape[0]
+
+        x_sort = sorted(all_pts, key=itemgetter(0))
+        left_pts, right_pts = x_sort[:N/2], x_sort[-(N/2):]
+        left_pts_y, right_pts_y = sorted(left_pts, key=itemgetter(1)), sorted(right_pts, key=itemgetter(1))
+        best = left_pts_y[0], left_pts_y[-1], right_pts_y[0], right_pts_y[-1] 
+        rect_pts = np.int32(best)
         line_pts = rect_pts.reshape((-1, 1, 2))
         cv2.polylines(orig_img, line_pts, True, (0, 255 ,0), 3)
 
@@ -141,54 +175,128 @@ def dilate_erode(img):
     img = cv2.dilate(img, kernel5, iterations=2)
     return img
 
-def find_licence(image):
-    """Find licence from image
+def measure_blur(img):
+    """Measures the blurriness of an image using the variation of the Laplacian inspired by
+    Pech-Pacheco et al. 2000 (optica.csic.es/papers/icpr2k.pdf)
 
     Args:
-        image (numpy.ndarray): input image matrix
+        img (numpy.ndarray): grayscale image matrix
 
     Returns:
-        numpy.ndarray: extracted licence image if found, empty array if not.
+        float: relative quantification of blurriness in an image
     """
-    orig_img = image
-    thresh = hsv_threshold(orig_img)
-    thresh = dilate_erode(thresh)
-    conts, img = rect_contours(thresh, orig_img)
-    if conts.size:
-        pts, img = combine_rects(conts, img)
-        new_img = warp_rect(orig_img, pts)
-        return new_img
-    return np.array([])
+    return cv2.Laplacian(img, cv2.CV_64F).var()
+
+class LicencePlate(object):
+    _best_plates_ever = {}
+    _lbbox = (
+        [26, 153, 116, 192],
+        [147, 292, 115, 189],
+        [23, 82, 217, 250],
+        [75, 127, 217, 250],
+        [170, 222, 217, 250],
+        [221, 269, 217, 250]
+    ) #list of bbox locations [x1, x2, y1, y2]
+    _parking_template = cv2.imread(str(files(ldriver.data.licence).joinpath('P.png')), cv2.IMREAD_UNCHANGED)
+    _match_threshold = 0.15
+
+    def __init__(self, img, grayscale=False, binary=False):
+        self.valid = False
+        found, licence_img = self.find_licence(img)
+
+        if found:
+            #Image Preproccesing
+            gray = cv2.cvtColor(licence_img, cv2.COLOR_BGR2GRAY)
+            bi = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY_INV,15,2)
+            self.letters = tuple([bi[y1:y2,x1:x2] for x1,x2,y1,y2 in self._lbbox])
+            self.valid = self.check_valid(self.letters[0])
+
+            if grayscale:
+                licence_img = gray
+            elif binary:
+                licence_img = bi
+            self.img = licence_img
+        else:
+            self.img = img
+
+        self.blur = measure_blur(img)
+
+    def __bool__(self):
+        return self.valid
+
+    @classmethod
+    def check_valid(cls, img):
+        img = cv2.resize(img, cls._parking_template.shape[:2])
+        res = cv2.matchTemplate(img,cls._parking_template,cv2.TM_CCOEFF_NORMED)
+        return np.max(res) > cls._match_threshold
+    
+    @staticmethod
+    def find_licence(image):
+        """Find licence from image
+
+        Args:
+            image (numpy.ndarray): input image matrix
+
+        Returns:
+            numpy.ndarray: extracted licence image if found, empty array if not.
+        """
+        orig_img = image.copy()
+        detected, new_img = False, None
+        thresh = hsv_threshold(orig_img)
+        thresh = dilate_erode(thresh)
+        conts, img = rect_contours(thresh, orig_img)
+        # conts = combine_rects(conts)
+        pts, img = combine_plate(conts, img)
+        if pts.shape[0]:
+            new_img = warp_rect(orig_img, pts)
+            detected = True
+        else:
+            print('no licence')
+        return detected, new_img
+    
+    _compare_thresh = 0.17
+    def __eq__(self, other):
+        diff = compare_nrmse(self.img, other.img)
+        logging.debug('similarity: {}'.format(diff))
+        return diff < self._compare_thresh
 
 if __name__ == '__main__':
+    logging.getLogger("").setLevel(logging.DEBUG)
     # Testing
     import glob
     # orig_img = cv2.imread('./experiments/test_images/74.png')
     for img in glob.glob('experiments/test_images/*.png'):
-        orig_img = cv2.imread(img)
-        cv2.imshow('testing', orig_img)
+        lp = LicencePlate(cv2.imread(img))
+        cv2.imshow('testing', lp.img)
         cv2.waitKey(0)
+        logging.info('{}'.format(measure_blur(lp.img)))
+        logging.debug('{}\n------------------------------------'.format(lp.valid))
+        # orig_img = cv2.imread(img)
+        # cv2.imshow('testing', orig_img)
+        # cv2.waitKey(0)
 
-        thresh = hsv_threshold(orig_img)
-        thresh = dilate_erode(thresh)
-        cv2.imshow('testing', thresh)
-        cv2.waitKey(0)
+        # thresh = hsv_threshold(orig_img)
+        # thresh = dilate_erode(thresh)
+        # cv2.imshow('testing', thresh)
+        # cv2.waitKey(0)
 
-        conts, img = rect_contours(thresh, orig_img)
-        cv2.imshow('testing', img)
-        cv2.waitKey(0)
+        # conts, img = rect_contours(thresh, orig_img)
+        # conts = combine_rects(conts)
+        # cv2.imshow('testing', img)
+        # cv2.waitKey(0)
 
-        pts, img = combine_rects(conts, img)
-        cv2.imshow('testing', img)
-        cv2.waitKey(0)
+        # pts, img = combine_plate(conts, img)
+        # logging.info(pts,'\n------------------------------------')
+        # cv2.imshow('testing', img)
+        # cv2.waitKey(0)
 
-        try:
-            new_img = warp_rect(orig_img, pts)
-            cv2.imshow('testing', new_img)
-            cv2.waitKey(0)
-        except:
-            print('no licence')
+        # if pts.shape[0]:
+        #     new_img = warp_rect(orig_img, pts)
+        #     cv2.imshow('testing', new_img)
+        #     cv2.waitKey(0)
+        # else:
+        #     print('no licence')
 
     from utils import BoundingBoxWidget
-    bbwidget = BoundingBoxWidget(new_img)
+    bbwidget = BoundingBoxWidget(lp.img)
     bbwidget.display()
