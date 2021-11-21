@@ -28,6 +28,7 @@ class LicenceOCR:
         preds_oh = self.model.predict(resized_letters)
         preds = [ALL_LETTERS[np.argmax(p)] for p in preds_oh]
         print(preds)
+        return preds
 
     @classmethod
     def process_letters(cls, letters):
