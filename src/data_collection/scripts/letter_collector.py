@@ -8,13 +8,18 @@ import rospy
 from pathlib2 import Path
 import os
 import logging
+import glob
+import re
 
 class ImgCollector:
     data_dir = Path('plate_data')
     def __init__(self):
         if not os.path.exists(str(self.data_dir)):
             os.makedirs(str(self.data_dir))
-        self.cur_img_id = 0
+        l = max([re.findall(r'\d+', imgf)[0] for imgf in glob.glob(str(self.data_dir/'*.png'))])
+        
+        self.cur_img_id = l+1
+        print('started collecting images at index {}'.format(self.cur_img_id))
         self.prev = None
         self.best_of_group = None
 
