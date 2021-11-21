@@ -16,7 +16,10 @@ class ImgCollector:
     def __init__(self):
         if not os.path.exists(str(self.data_dir)):
             os.makedirs(str(self.data_dir))
-        l = max([int(re.findall(r'\d+', imgf)[0]) for imgf in glob.glob(str(self.data_dir/'*.png'))])
+        try:
+            l = max([int(re.findall(r'\d+', imgf)[0]) for imgf in glob.glob(str(self.data_dir/'*.png'))])
+        except:
+            l = 0
         self.cur_img_id = int(l)+1
         print('started collecting images at index {}'.format(self.cur_img_id))
         self.prev = None

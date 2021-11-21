@@ -10,8 +10,9 @@ from ldriver.licence.ocr import LicenceOCR
 def proccess_image(data):
     orig_img = bridge.imgmsg_to_cv2(data, desired_encoding='bgr8')
     lp = LicencePlate(orig_img)
-    print(locr.read_licence(lp))
     if lp.valid:
+        locr.read_licence(lp)
+        #print(locr.read_licence(lp))
         cv2.imshow('plate', lp.img)
         cv2.waitKey(1)
 
