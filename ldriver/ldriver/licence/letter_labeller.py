@@ -4,6 +4,7 @@ import cv2
 from ocr import ALL_LETTERS
 import json
 import re
+import os
 
 def main(source):
     cv_letter_offset = 97
@@ -20,15 +21,19 @@ def main(source):
         img = cv2.imread(imgf, cv2.IMREAD_UNCHANGED)
         cv2.imshow('labeller', img)
         key = cv2.waitKey(0)
-        for _ in range(100):
-            try:
-                label = ALL_LETTERS[key-cv_letter_offset] if is_cv_alpha(key) else ALL_LETTERS[key-cv_number_offset+26]
-                print(label)                
-                labels[re.findall(r'\d+', imgf)[0]] = label
-                break
-            except IndexError:
-                print('invalid keyboard input')
-                continue
+        print(key)
+        if key == 59:
+            os.remove(imgf)
+        else:
+            for _ in range(100):
+                try:
+                    label = ALL_LETTERS[key-cv_letter_offset] if is_cv_alpha(key) else ALL_LETTERS[key-cv_number_offset+26]
+                    print(label)                
+                    labels[re.findall(r'\d+', imgf)[0]] = label
+                    break
+                except IndexError:
+                    print('invalid keyboard input')
+                    continue
     with open('./plate_data/labels.json', 'w+') as f:
         json.dump(labels, f)
 

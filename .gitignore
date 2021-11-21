@@ -12,4 +12,4 @@ experiments/data/
 plate_data/*
 plate_data
 *.json
-!*/P.png
+!ldriver/ldriver/data/licence/P.png
