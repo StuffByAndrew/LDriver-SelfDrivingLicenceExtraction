@@ -4,7 +4,7 @@ import numpy as np
 import cv2 as cv
 import time
 
-img = cv.imread('experiments/test_images/134.png',cv.IMREAD_COLOR)
+img = cv.imread('img_cmd_data/78.png',cv.IMREAD_COLOR)
 
 img = cv.medianBlur(img,5)
 
