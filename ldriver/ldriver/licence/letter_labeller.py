@@ -5,16 +5,22 @@ from ocr import ALL_LETTERS
 import json
 import re
 import os
+import logging
 
 def has_all_numbers(dct=None):
     if not dct:
-        with open('./plate_data/labels.json', 'r') as f:
-            labels = json.load(f)
+        if os.path.isfile('./plate_data/labels.json'):
+            with open('./plate_data/labels.json', 'r') as f:
+                labels = json.load(f)
+        else:
+            return
     else:
         labels = dct
     
     letters = set(map(str,labels.values()))
     print('dataset includes {} letters out of {}'.format(len(letters), len(ALL_LETTERS)))
+    print('letters:{}'.format(letters))
+    print('missing: {}'.format(set(ALL_LETTERS)-letters))
 
 def main(source):
     cv_letter_offset = 97
@@ -31,7 +37,7 @@ def main(source):
         img = cv2.imread(imgf, cv2.IMREAD_UNCHANGED)
         cv2.imshow('labeller', img)
         key = cv2.waitKey(0)
-        print(key)
+        logging.debug(key)
         if key == 59:
             os.remove(imgf)
         else:

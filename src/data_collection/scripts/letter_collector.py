@@ -16,9 +16,8 @@ class ImgCollector:
     def __init__(self):
         if not os.path.exists(str(self.data_dir)):
             os.makedirs(str(self.data_dir))
-        l = max([re.findall(r'\d+', imgf)[0] for imgf in glob.glob(str(self.data_dir/'*.png'))])
-        
-        self.cur_img_id = l+1
+        l = max([int(re.findall(r'\d+', imgf)[0]) for imgf in glob.glob(str(self.data_dir/'*.png'))])
+        self.cur_img_id = int(l)+1
         print('started collecting images at index {}'.format(self.cur_img_id))
         self.prev = None
         self.best_of_group = None
@@ -33,7 +32,7 @@ class ImgCollector:
                 self.best_of_group = lp if lp.blur > self.prev.blur else self.prev
             else:
                 letters = LicenceOCR.process_letters(self.best_of_group.letters)
-                for l in letters:
+                for l in letters[1:]:
                     img_f = str(self.data_dir/'{}.png'.format(self.cur_img_id))
                     cv2.imwrite('./'+img_f, l)
                     self.cur_img_id += 1

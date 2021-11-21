@@ -56,7 +56,7 @@ class LicenceOCR:
         # Create a new model instance
         model = self.create_model()
         # Restore the weights
-        model.load_weights('weights/best')
+        model.load_weights('weights/best_letters')
         return model
     
     def create_model(self):

@@ -57,7 +57,7 @@ def pid_steering(image_data):
 
 if __name__ == "__main__":
     bridge = CvBridge()
-    base_speed = 0.12
+    base_speed = 0.08
     PID = PID_Control(0.004, 0.000, 0.000, 10, 0.5)
     target = 1088
     counter = 0
