@@ -6,6 +6,16 @@ import json
 import re
 import os
 
+def has_all_numbers(dct=None):
+    if not dct:
+        with open('./plate_data/labels.json', 'r') as f:
+            labels = json.load(f)
+    else:
+        labels = dct
+    
+    letters = set(map(str,labels.values()))
+    print('dataset includes {} letters out of {}'.format(len(letters), len(ALL_LETTERS)))
+
 def main(source):
     cv_letter_offset = 97
     cv_number_offset = 48
@@ -34,12 +44,15 @@ def main(source):
                 except IndexError:
                     print('invalid keyboard input')
                     continue
+
     with open('./plate_data/labels.json', 'w+') as f:
         json.dump(labels, f)
+    has_all_numbers(labels)
 
     
 
 if __name__ == '__main__':
+    has_all_numbers()
     # parser = argparse.ArgumentParser(description='Process some integers.')
     # parser.add_argument('--source', dest='source', action='store_const',
     #                 const=sum, default=max,
