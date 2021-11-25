@@ -1,22 +1,56 @@
 from os import stat
 from tensorflow.keras import layers, models, optimizers
+import tensorflow as tf
+from tensorflow.python.keras.backend import set_session
+from tensorflow.python.keras.models import load_model
 import string
 import cv2
 import numpy as np
-from utils import sharpen
 from matplotlib import pyplot as plt
 
 ALL_LETTERS = list(string.ascii_uppercase) + list(map(str,range(0,10)))
+sess1 = tf.Session()    
+graph1 = tf.get_default_graph()
+set_session(sess1)
+
 
 class LicenceOCR:
     img_shape = (50, 50, 1)
+    # Common missed letters that can 
+    dig2alpha={
+        '1': 'T',
+        '2': 'Z',
+        '3': 'E',
+        '4': 'A',
+        '5': 'S',
+        '6': 'G',
+        '8': 'B',
+        '9': 'P',
+        '0': 'C',
+    }
+    alpha2dig={
+        'I': '1',
+        'S': '5',
+        'T': '1',
+        'Z': '2'
+    }
 
     def __init__(self, vtesting=False, experimental=False):
         self.vtest = vtesting
         self.exper = experimental
-        self.model = self.load_weights()
+        # self.model = self.load_weights()
+        self.model = load_model('./models/best_letters_1.h5')
+
 
     def read_licence(self, licence):
+        """given a LicencePlate, find the letters that make it up by CNN inference
+
+        Args:
+            licence (LicencePlate): Lic
+
+        Returns:
+            list: list of strings representing letters from licence
+        """
         letter_rois = licence.letters
         
         resized_letters = self.process_letters(letter_rois)
@@ -25,16 +59,42 @@ class LicenceOCR:
         a = self.img_shape
         resized_letters = resized_letters.reshape(resized_letters.shape[0], a[0], a[1], a[2])
         self.vshow(resized_letters)
-        preds_oh = self.model.predict(resized_letters)
-        preds = [ALL_LETTERS[np.argmax(p)] for p in preds_oh]
-        print(preds)
+        
+        global sess1
+        global graph1
+        with graph1.as_default():
+            set_session(sess1)
+            preds_oh = self.model.predict(resized_letters)
+
+            preds = [ALL_LETTERS[np.argmax(p)] for p in preds_oh]
+            print(preds)
+
+
+        preds[2], preds[3] = self.dig2alpha(preds[2], preds[2]), self.dig2alpha(preds[3], preds[3])
+        preds[4], preds[5] = self.alpha2dig(preds[4], preds[4]), self.alpha2dig(preds[5], preds[5])
+        
         return preds
 
     @classmethod
     def process_letters(cls, letters):
+        """Preproccessing for letters entered to Licence OCR. The current proccess only includes resizing
+        to size required for LicenceOCR tf model input. Note most of the additional processing is done by the
+        Licence class.
+
+        Args:
+            letters (list): list of images to be proccessed
+
+        Returns:
+            (list): list of images to be proccessed
+        """
         return np.array(list(map(lambda letters : cv2.resize(letters, cls.img_shape[:2]), letters)))
 
     def vshow(self, imgs):
+        """Used for testing proccesses used for LicenceOCR
+
+        Args:
+            imgs (np.ndarray): experimental image to be processed
+        """
         if self.vtest:
             for img in imgs:
                 img = np.squeeze(img, axis=2)
@@ -54,13 +114,23 @@ class LicenceOCR:
                     self .histogram(img)
 
     def load_weights(self):
+        """ Loads weights into a tensoflow model object used by ocr to predict letters
+
+        Returns:
+            tensorflow.keras.model : tf model with the trained weights loaded
+        """
         # Create a new model instance
         model = self.create_model()
         # Restore the weights
-        model.load_weights('weights/best_letters')
+        model.load_weights('./weights/best_letters')
         return model
     
     def create_model(self):
+        """Create's model compatible with the one that was used for training
+
+        Returns:
+            tensorflow.keras.model : tf model
+        """
         conv_model = models.Sequential()
         conv_model.add(layers.Conv2D(32, (3, 3), activation='relu',
                                     input_shape=self.img_shape))
