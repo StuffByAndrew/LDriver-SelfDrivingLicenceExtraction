@@ -7,10 +7,12 @@ import re
 import os
 import logging
 
+labels_file = './plate_data/labels.json'
+
 def has_all_numbers(dct=None):
     if not dct:
-        if os.path.isfile('./plate_data/labels.json'):
-            with open('./plate_data/labels.json', 'r') as f:
+        if os.path.isfile(labels_file):
+            with open(labels_file, 'r') as f:
                 labels = json.load(f)
         else:
             return
@@ -23,6 +25,8 @@ def has_all_numbers(dct=None):
     print('missing: {}'.format(set(ALL_LETTERS)-letters))
 
 def main(source):
+    
+                
     cv_letter_offset = 97
     cv_number_offset = 48
 
@@ -32,10 +36,15 @@ def main(source):
     def is_cv_alpha(n):
         return 97 <= n <= 122
 
-    labels = {}    
+    labels = {}
+    if os.path.isfile(labels_file):
+            with open(labels_file, 'r') as f:
+                labels = json.load(f)  
+
     for imgf in glob.glob('./plate_data/*.png'):
+        file_n = re.findall(r'\d+', imgf)[0]
         img = cv2.imread(imgf, cv2.IMREAD_UNCHANGED)
-        cv2.imshow('labeller', img)
+        cv2.imshow('labelling {}'.format(file_n), img)
         key = cv2.waitKey(0)
         logging.debug(key)
         if key == 59:
@@ -51,7 +60,7 @@ def main(source):
                     print('invalid keyboard input')
                     continue
 
-    with open('./plate_data/labels.json', 'w+') as f:
+    with open(labels_file, 'w+') as f:
         json.dump(labels, f)
     has_all_numbers(labels)
 

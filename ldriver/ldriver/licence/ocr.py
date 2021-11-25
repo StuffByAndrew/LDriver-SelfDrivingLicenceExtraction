@@ -24,6 +24,7 @@ class LicenceOCR:
         '4': 'A',
         '5': 'S',
         '6': 'G',
+        '7': 'Z',
         '8': 'B',
         '9': 'P',
         '0': 'C',
@@ -65,15 +66,13 @@ class LicenceOCR:
         with graph1.as_default():
             set_session(sess1)
             preds_oh = self.model.predict(resized_letters)
-
             preds = [ALL_LETTERS[np.argmax(p)] for p in preds_oh]
-            print(preds)
+            conf = np.array([np.max(p) for p in preds_oh])
 
-
-        preds[2], preds[3] = self.dig2alpha(preds[2], preds[2]), self.dig2alpha(preds[3], preds[3])
-        preds[4], preds[5] = self.alpha2dig(preds[4], preds[4]), self.alpha2dig(preds[5], preds[5])
+        preds[2], preds[3] = self.dig2alpha.get(preds[2], preds[2]), self.dig2alpha.get(preds[3], preds[3])
+        preds[4], preds[5] = self.alpha2dig.get(preds[4], preds[4]), self.alpha2dig.get(preds[5], preds[5])
         
-        return preds
+        return preds, conf
 
     @classmethod
     def process_letters(cls, letters):
@@ -170,7 +169,8 @@ if __name__ == '__main__':
         # found, licence = LicencePlate.find_licence(orig_img)
         # if found:
         #     ocr.read_licence(licence)
-
+        lr, lc = None, None
         lp = LicencePlate(orig_img)
         if lp.valid:
-            ocr.read_licence(lp)
+            res, conf = ocr.read_licence(lp)
+            print(res, conf)
