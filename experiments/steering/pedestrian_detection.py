@@ -1,5 +1,6 @@
 import sys
 import cv2
+import time
 import numpy as np
 import imutils
 from ldriver.steering.lane_detection import hsv_threshold, mask_rectangle, find_center
@@ -48,51 +49,40 @@ def get_road_mask(input_image):
     image = dilate_erode(image, 50, 50)
     return floodfill(image)
 
-def pedestrian_detected(input_image):
-    mask = get_road_mask(input_image) 
-    image = cv2.bitwise_and(input_image, input_image, mask=mask)
-    image = hsv_threshold(image, lh=0, ls=10, lv=90, uh=0, us=255, uv=255)
-    image = dilate_erode(image, 0, 5)
-    image = dilate_erode(image, 5, 0)
-    edged = cv2.Canny(image.copy(), 30, 200) 
-    contours = cv2.findContours(edged.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    contours = imutils.grab_contours(contours)
-    return True if len(contours) > 4 else False
+def pedestrian_crossing(current_image_input, previous_image_output):
+    current_image = cv2.cvtColor(current_image_input, cv2.COLOR_BGR2GRAY)
+    current_image = cv2.GaussianBlur(current_image, (25,25), 0)
+
+    if previous_image_output is None:
+        return False, current_image
+    
+    difference = cv2.absdiff(current_image, previous_image_output)
+    _, thresh = cv2.threshold(difference,55,255,cv2.THRESH_BINARY)
+    cv2.imshow("image", difference)
+    cv2.waitKey(0)
+    return np.any(thresh), current_image
+   
 
 def redline_detected(input_image, bottom_percent=1):
     """returns true if red line is detected within the bottom_percent of the image"""
-    image_height = input_image.shape[0]
-    cv2.imshow("a", input_image)
-    cv2.waitKey(0)
-    mask = get_road_mask(input_image)
-    image = cv2.bitwise_and(input_image, input_image, mask=mask)
-    image = mask_rectangle(image, left=0.2, top=(1-bottom_percent), right=0.2, bottom=0)
-    cv2.imshow("a", image)
-    cv2.waitKey(0)
+    start = time.time()
+    #mask = get_road_mask(input_image)
+    #image = cv2.bitwise_and(input_image, input_image, mask=mask)
+    image = mask_rectangle(input_image, left=0.2, top=(1-bottom_percent), right=0.2, bottom=0)
     image = hsv_threshold(image, lh=0, ls=10, lv=90, uh=0, us=255, uv=255)
-    center = find_center(image)
-    return False if not center else True
-
-def image_subtraction(previous_image, current_image):
-    return cv2.subtraction(previous_image, current_image)
+    print(time.time() - start)
+    return np.any(image)
 
 if __name__ == "__main__":
     import glob
-    previous_image, current_image = None, None
-    for image_file in glob.glob("experiments/pedestrian_detection/crossing/*.png"):
-    #for image_file in glob.glob('img_cmd_data/*.png'):
-    #     image = cv2.imread(image_file)
-    #     print(pedestrian_detected(image))
-    #     print(image_file)
-    #     cv2.imshow("image", image)
-    #     cv2.waitKey(0)
+    #for image_file in glob.glob("src/data_collection/scripts/img_cmd_data/*.png"):
+    prev_image = None
+    for image_file in glob.glob('experiments/pedestrian_detection/crossing/*.png'):
+        image = cv2.imread(image_file)
+        shouldpass, prev_image = pedestrian_crossing(image, prev_image)
         
-        current_image = cv2.imread(image_file)
-        current_image = cv2.cvtColor(current_image, cv2.COLOR_BGR2GRAY)
-        current_image = cv2.GaussianBlur(current_image, (21,21), 0)
-        if previous_image is not None:
-            cv2.imshow("image", cv2.absdiff(current_image, previous_image))
-            cv2.waitKey(0)
-        previous_image = current_image
-       
+        
+        #image = cv2.imread(image_file)
+        #image = cv2.imread("src/data_collection/scripts/img_cmd_data/124.png")
+        #print(redline_detected(image, 0.26))
     

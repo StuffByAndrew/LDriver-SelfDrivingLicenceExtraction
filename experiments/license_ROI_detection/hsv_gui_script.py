@@ -3,8 +3,12 @@
 import numpy as np
 import cv2 as cv
 import time
-
-img = cv.imread('img_cmd_data/78.png',cv.IMREAD_COLOR)
+"""
+person:
+Lower: [88, 28, 42]
+Upper: [113, 117, 128]
+"""
+img = cv.imread('experiments/pedestrian_detection/crossing/124.png',cv.IMREAD_COLOR)
 
 img = cv.medianBlur(img,5)
 

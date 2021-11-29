@@ -13,6 +13,17 @@ def slope(line):
     x1, y1, x2, y2 = line[0]
     return float(y2-y1)/(x2-x1)
 
+def slope_point_form(line):
+    x1, y1, x2, y2 = line[0]
+    m = float(y2-y1)/(x2-x1)
+    b = y1 - m*x1 
+    return m, b  
+
+def horizontal_distance_from_line(point, slope, y_intercept):
+    x1 = point[0]
+    x2 = (point[1] - y_intercept)/slope
+    return x2-x1
+
 def filter_lines(lines, min_slope):
     """ Returns numpy.ndarray of lines with abs(slopes) greater than or equal to min_slope
     
@@ -171,14 +182,50 @@ def find_center(image):
         return None
     return (cx, cy)
 
+def dilate_erode(img, dilation_kernel_size=0, erosion_kernel_size=0):
+    """ Denoise salt and pepper noise in an image through dilation and erosion
+
+    Args:
+        img (numpy.ndarray): binary image matrix
+
+    Returns:
+        numpy.ndarray: denoised binary image
+    """
+    dilation_kernel = np.ones((dilation_kernel_size, dilation_kernel_size), np.uint8)
+    erosion_kernel = np.ones((erosion_kernel_size, erosion_kernel_size), np.uint8)
+    img = cv2.dilate(img, dilation_kernel, iterations=1)
+    img = cv2.erode(img, erosion_kernel, iterations=1)
+    return img
+
+def floodfill(input_image):
+    image = input_image.copy()
+    height, width = image.shape[:2]
+    mask = np.zeros((height+2, width+2), np.uint8)
+    image = image.astype("uint8")
+    cv2.floodFill(image, mask, (0,0), 255)
+    negative = cv2.bitwise_not(image)
+    return input_image | negative
+
+def get_road_mask(input_image):
+    image = cv2.medianBlur(input_image, 5)
+    image = hsv_threshold(image, lh=0, ls=0, lv=75, uh=0, us=0, uv=95)
+    image = dilate_erode(image, 50, 50)
+    image = dilate_erode(image, 50, 50)
+    return floodfill(image)
+
+def mask_road(input_image):
+    mask = get_road_mask(input_image)
+    return cv2.bitwise_and(input_image, input_image, mask=mask)
+
 def get_roadcolor_center(image):
     center_image = mask_rectangle(image, top=0.7)
+    center_image = mask_road(center_image)
     center_image = hsv_threshold(center_image, lv=75, uv=95)
     _, center_image = cv2.threshold(center_image, thresh=240, maxval=255, type=cv2.THRESH_BINARY)
     return find_center(center_image)
 
 def get_bottom_right_line_center(image):
-    line_image = mask_rectangle(image, left=0.7, top=0.7)
+    line_image = mask_rectangle(image, left=0.5, top=0.5)
     line_image = cv2.cvtColor(line_image, cv2.COLOR_BGR2GRAY)
     _, line_image = cv2.threshold(line_image, thresh=240, maxval=255, type=cv2.THRESH_BINARY)
     return find_center(line_image)
@@ -189,14 +236,34 @@ def get_bottom_left_line_center(image):
     _, line_image = cv2.threshold(line_image, thresh=240, maxval=255, type=cv2.THRESH_BINARY)
     return find_center(line_image)
 
+def get_right_lines_center(image):
+    lines = get_roadlines(image)
+    _, right_side = split_lines_slope(lines)
+    return get_lines_center(right_side)
+
+# if __name__ == "__main__":
+#     folder = "experiments/test_images/"
+#     for image_file in sorted(os.listdir(folder)):
+#         print(image_file)
+#         image = cv2.imread(folder + image_file, cv2.IMREAD_COLOR)
+#         center = get_bottom_right_line_center(image)
+#         cv2.circle(image, center, 10, 255, -1)
+#         center = get_bottom_left_line_center(image)
+#         cv2.circle(image, center, 10, 255, -1)
+#         cv2.imshow("Image", image)
+#         cv2.waitKey(0)
 if __name__ == "__main__":
-    folder = "experiments/test_images/"
-    for image_file in sorted(os.listdir(folder)):
-        print(image_file)
-        image = cv2.imread(folder + image_file, cv2.IMREAD_COLOR)
-        center = get_bottom_right_line_center(image)
-        cv2.circle(image, center, 10, 255, -1)
-        center = get_bottom_left_line_center(image)
-        cv2.circle(image, center, 10, 255, -1)
-        cv2.imshow("Image", image)
-        cv2.waitKey(0)
+    image = cv2.imread("img_cmd_data/13.png")
+    cv2.imshow("a", image)
+    cv2.waitKey(0)
+    image = mask_rectangle(image, left=0.5)
+    lines = get_roadlines(image)
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        cv2.line(image, (x1, y1), (x2, y2), (255), 3)
+        print(slope_point_form(line))
+        cv2.imshow("a", image)
+        cv2.waitKey(0)  
+
+#(0.6226415094339622, -45.358490566037744)
+#(0.6228070175438597, -43.07017543859649)
