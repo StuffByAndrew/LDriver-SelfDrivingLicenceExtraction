@@ -49,28 +49,35 @@ def get_road_mask(input_image):
     image = dilate_erode(image, 50, 50)
     return floodfill(image)
 
-def pedestrian_crossing(current_image_input, previous_image_output):
-    current_image = cv2.cvtColor(current_image_input, cv2.COLOR_BGR2GRAY)
-    current_image = cv2.GaussianBlur(current_image, (25,25), 0)
+
+def pedestrian_crossing(current_image_input, previous_image_output, history):
+    #current_image = cv2.cvtColor(current_image_input, cv2.COLOR_BGR2GRAY)
+    """
+person:
+Lower: [88, 28, 42]
+Upper: [113, 117, 128]
+"""
+    current_image = hsv_threshold(current_image_input, lh=88, ls=40, lv=40, uh=113, us=255, uv=128)
+    current_image = cv2.GaussianBlur(current_image, (21,21), 0)
+    current_image = dilate_erode(current_image, 0, 5)
 
     if previous_image_output is None:
         return False, current_image
     
     difference = cv2.absdiff(current_image, previous_image_output)
     _, thresh = cv2.threshold(difference,55,255,cv2.THRESH_BINARY)
-    cv2.imshow("image", difference)
-    cv2.waitKey(0)
-    return np.any(thresh), current_image
+    history.append(np.count_nonzero(thresh))
+    history.pop(0)
+    average = sum(history) / len(history)
+    return average, current_image
    
 
 def redline_detected(input_image, bottom_percent=1):
     """returns true if red line is detected within the bottom_percent of the image"""
-    start = time.time()
     #mask = get_road_mask(input_image)
     #image = cv2.bitwise_and(input_image, input_image, mask=mask)
     image = mask_rectangle(input_image, left=0.2, top=(1-bottom_percent), right=0.2, bottom=0)
     image = hsv_threshold(image, lh=0, ls=10, lv=90, uh=0, us=255, uv=255)
-    print(time.time() - start)
     return np.any(image)
 
 if __name__ == "__main__":
