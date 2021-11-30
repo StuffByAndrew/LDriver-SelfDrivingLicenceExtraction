@@ -1,73 +1,7 @@
-import os
 import cv2
 import numpy as np
 
-def slope(line):
-    """ Calculates the slope of a line
-    
-    Args:
-        line (numpy.ndarray): line represented by two points
-    Returns:
-        float: slope of line
-    """
-    x1, y1, x2, y2 = line[0]
-    return float(y2-y1)/(x2-x1)
-
-def filter_lines(lines, min_slope):
-    """ Returns numpy.ndarray of lines with abs(slopes) greater than or equal to min_slope
-    
-    Args:
-        lines (numpy.ndarray): input lines
-        min_slope (float): minimum slope
-    Returns
-        numpy.ndarray: filtered lines
-    """
-    if lines is None: return None
-    return filter(lambda line: abs(slope(line)) >= min_slope, lines)
-
-def split_lines_slope(lines):
-    """ Split lines based on positive or negative slopes 
-    (Positive slopes tend to represent left roadlines, negative -> right roadlines)
-
-    Args: 
-        lines (numpy.ndarray): input lines
-    Returns:
-        list: list of lines with positive slope
-        list: list of lines with negative slope
-    """
-    if not lines:
-        return None
-    left_side, right_side = [], []
-    for line in lines:
-        if slope(line) > 0:
-            right_side.append(line)
-        else:
-            left_side.append(line)
-    return left_side, right_side
-
-def split_lines_centroid(centroid, lines):
-    """ Split lines based on left or right of centroid
-
-    Args: 
-        lines (numpy.ndarray): input lines
-    Returns:
-        list: list of lines left of centroid
-        list: list of lines right of centroid
-    """
-    if not lines:
-        return None
-    left_side, right_side = [], []
-    for line in lines:
-        # TODO: split lines better
-        if line[0][0] < centroid[0] or line[1][0] < centroid[0]:
-            left_side.append(line)
-        elif line[0][0] > centroid[0] or line[1][0] > centroid[1]:
-            right_side.append(line)
-        else:
-            pass
-    return left_side, right_side
-    
-def mask_rectangle(image, left=0, top=0, right=0, bottom=0):
+def mask_rectangle(input_image, left=0, top=0, right=0, bottom=0):
     """ Returns an image with left, top, right, bottom percent of the image masked out and the remaining 
     portion untouched.
     
@@ -80,80 +14,9 @@ def mask_rectangle(image, left=0, top=0, right=0, bottom=0):
     """
     if not 0 <= left <= 1 and 0 <= top <= 1 and 0 <= right <= 1 and 0 <= bottom <= 1:
         raise ValueError("left, top, right, nd bottom must be floats between 0 and 1 inclusive.")
-    mask = np.zeros(image.shape[:2], dtype="uint8")
-    cv2.rectangle(mask, (int(left*image.shape[1]), int(top*image.shape[0])), (int((1 - right)*image.shape[1]), int((1- bottom)*image.shape[0])), 255, -1)
-    return cv2.bitwise_and(image, image, mask=mask)
-
-def hsv_threshold(img, lh=0, uh=0, ls=0, us=0, lv=0, uv=0):
-    """ Thresholds an image based on hsv 
-    
-    Args:
-        lh, uh, ls, us, lv, uv (int): lower and upper hue, saturation, and value thresholds
-    """
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    cv2.medianBlur(hsv,5)
-    uh = uh
-    us = us
-    uv = uv
-    lh = lh
-    ls = ls
-    lv = lv
-    lower_hsv = np.array([lh,ls,lv])
-    upper_hsv = np.array([uh,us,uv])
-
-    return cv2.inRange(hsv, lower_hsv, upper_hsv)
-
-def get_roadlines(image):
-    """ Obtains the roadlines from the image
-
-    Args:
-        image (numpy.ndarray): input image
-    Returns:
-        numpy.ndarray: ndarray of roadlines
-    """
-    line_image = mask_rectangle(image, top=0.7)
-    line_image = cv2.cvtColor(line_image, cv2.COLOR_BGR2GRAY)
-    line_image = cv2.GaussianBlur(line_image, ksize=(15, 15), sigmaX=0)
-    _, line_image = cv2.threshold(line_image, thresh=240, maxval=255, type=cv2.THRESH_BINARY)
-    line_image = cv2.Canny(line_image, threshold1=30, threshold2=130)
-    line_image = cv2.Sobel(line_image, ddepth=cv2.CV_64F, dx=0, dy=1, ksize=5)
-    lines = cv2.HoughLinesP(line_image.astype(np.uint8), rho=1, theta=np.pi/180, threshold=5, minLineLength=5, maxLineGap=5)
-    return filter_lines(lines, 0.2)
-
-def get_lines_center(lines):
-    """ Obtains the center of the roadlines when both sides are detected, otherwise outputs None
-    
-    Args: 
-        image (np.ndarray): input lines
-    Returns:
-        tuple: x-y coordinates of the center of the lines
-    """
-    average_x, average_y, count = 0, 0, 0
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
-        average_x += x2 + x1
-        average_y += y2 + y1
-        count += 2
-    return (average_x//count, average_y//count)
-
-def get_roadlines_center(image):
-    """ Obtains the center of the roadlines when both sides are detected, otherwise outputs None
-    
-    Args: 
-        image (np.ndarray): input image
-    Returns:
-        tuple: x-y coordinates of the center of the roadlines. None if both sides were not detected
-    """
-    lines = get_roadlines(image)
-    if not lines: return None
-    sides = split_lines_slope(lines)
-    if not sides[0] or not sides[1]: return None
-    averages = []
-    for side in sides:
-        averages.append(get_lines_center(side))
-    center_x = (averages[0][0] + averages[1][0])//2
-    center_y = (averages[1][1] + averages[1][1])//2
-    return (center_x, center_y)
+    mask = np.zeros(input_image.shape[:2], dtype="uint8")
+    cv2.rectangle(mask, (int(left*input_image.shape[1]), int(top*input_image.shape[0])), (int((1 - right)*input_image.shape[1]), int((1- bottom)*input_image.shape[0])), 255, -1)
+    return cv2.bitwise_and(input_image, input_image, mask=mask)
 
 def find_center(image):
     """ Finds the centroid of an object
@@ -171,32 +34,52 @@ def find_center(image):
         return None
     return (cx, cy)
 
-def get_roadcolor_center(image):
-    center_image = mask_rectangle(image, top=0.7)
-    center_image = hsv_threshold(center_image, lv=75, uv=95)
-    _, center_image = cv2.threshold(center_image, thresh=240, maxval=255, type=cv2.THRESH_BINARY)
-    return find_center(center_image)
+def roadline_center(input_image, right):
+    """ Obtain centroids of the roadline left or right of robot
 
-def get_bottom_right_line_center(image):
-    line_image = mask_rectangle(image, left=0.7, top=0.7)
+    Args: 
+        input_image (numpy.ndarray): input image
+        right (bool): if True obtains right roadline centroid, 
+        else left roadline centroid
+    Returns:
+        tuple: centroid of right or left roadline
+    """
+    image = mask_rectangle(input_image, top=0.5)
+    if right:
+        line_image = mask_rectangle(image, left=0.5)
+    else:
+        line_image = mask_rectangle(image, right=0.5)
     line_image = cv2.cvtColor(line_image, cv2.COLOR_BGR2GRAY)
     _, line_image = cv2.threshold(line_image, thresh=240, maxval=255, type=cv2.THRESH_BINARY)
     return find_center(line_image)
 
-def get_bottom_left_line_center(image):
-    line_image = mask_rectangle(image, right=0.7, top=0.7)
+def right_roadline_center(input_image):
+    """ Obtain centroids of the roadline left or right of robot
+
+    Args: 
+        input_image (numpy.ndarray): input image
+    Returns:
+        tuple: centroid of right roadline
+    """
+    line_image = mask_rectangle(input_image, top=0.5, left=0.5)
     line_image = cv2.cvtColor(line_image, cv2.COLOR_BGR2GRAY)
     _, line_image = cv2.threshold(line_image, thresh=240, maxval=255, type=cv2.THRESH_BINARY)
     return find_center(line_image)
 
-if __name__ == "__main__":
-    folder = "experiments/test_images/"
-    for image_file in sorted(os.listdir(folder)):
-        print(image_file)
-        image = cv2.imread(folder + image_file, cv2.IMREAD_COLOR)
-        center = get_bottom_right_line_center(image)
-        cv2.circle(image, center, 10, 255, -1)
-        center = get_bottom_left_line_center(image)
-        cv2.circle(image, center, 10, 255, -1)
-        cv2.imshow("Image", image)
-        cv2.waitKey(0)
+def horizontal_distance_from_line(point, slope, y_intercept):
+    """ Obtain the horizontal distance from the point to a 
+    line defined by slope and y_intercept
+
+    Args: 
+        point (tuple): input point
+        slope (float): slope of target line
+        y_intercept: y-intercept of target line
+    Returns:
+        float: distance
+    """
+    point_x = point[0]
+    line_x = float(point[1] - y_intercept)/slope
+    return line_x - point_x
+
+def flip_image(input_image):
+    return np.flipud(input_image)

@@ -8,7 +8,7 @@ import rospy
 from ldriver.licence.ocr import LicenceOCR
 import numpy as np
 from itertools import starmap
-from std_msgs.msg import String
+from std_msgs.msg import String, Int16
 
 HOR_LINE = '-' * 30
 TEAM_NAME = 'Brian_N_Andrew'
@@ -63,6 +63,7 @@ class LicenceDetector:
             }
             print('recorded {} at {}'.format(self.best[p_space]['pred'], self.best[p_space]['conf']))
             publish_to_scoring(p_space)
+        lid_pub.publish(Int16(int(p_space)))
         # print horizontal line
         print(HOR_LINE)
     
@@ -81,6 +82,7 @@ if __name__ == '__main__':
     locr = LicenceOCR()
     bridge = CvBridge()
     scoring_pub = rospy.Publisher('/license_plate', String, queue_size=1)
+    lid_pub = rospy.Publisher('/license_id', Int16, queue_size=1)
     rospy.sleep(1)
     scoring_pub.publish(str('{},{},0,XR58').format(
         TEAM_NAME,

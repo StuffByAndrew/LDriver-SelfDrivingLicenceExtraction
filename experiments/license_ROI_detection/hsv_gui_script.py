@@ -8,6 +8,7 @@ person:
 Lower: [88, 28, 42]
 Upper: [113, 117, 128]
 """
+
 img = cv.imread('img_cmd_data/1.png',cv.IMREAD_COLOR)
 
 img = cv.medianBlur(img,5)
