@@ -1,14 +1,18 @@
 #!/usr/bin/env python2
 from ldriver.licence.detection import LicencePlate
 import cv2
+from matplotlib.pyplot import imshow
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 import rospy
 from ldriver.licence.ocr import LicenceOCR
 import numpy as np
 from itertools import starmap
+from std_msgs.msg import String, Int16
 
-HOR_LINE = '-' * 20
+HOR_LINE = '-' * 30
+TEAM_NAME = 'Brian_N_Andrew'
+TEAM_PWD = 'multi21'
 
 class LicenceDetector:
     def __init__(self):
@@ -24,6 +28,9 @@ class LicenceDetector:
         cv2.waitKey(1)
         preds, conf = locr.read_licence(lp)
         p_space = preds[1]
+        def publish_to_scoring(id):
+            pred_str = ''.join(self.best[id]['pred'])
+            publish_scoring(plate_id=p_space, plate_num=pred_str[-4:])
         
         # Replace old letter predictions if new predictions have a higher confidence
         if p_space in self.best:
@@ -48,27 +55,38 @@ class LicenceDetector:
                 # Print predictions
                 new = ''.join(prev['pred'])
                 print('replaced {} with {}\n{}'.format(old, new, prev['conf']))
+                publish_to_scoring(p_space)
         else:
             self.best[p_space] = {
                 'conf': conf,
                 'pred': preds
             }
             print('recorded {} at {}'.format(self.best[p_space]['pred'], self.best[p_space]['conf']))
+            publish_to_scoring(p_space)
+        lid_pub.publish(Int16(int(p_space)))
         # print horizontal line
         print(HOR_LINE)
+    
+def publish_scoring(plate_id, plate_num):
+    scoring_pub.publish(str('{},{},{},{}').format(
+        TEAM_NAME,
+        TEAM_PWD,
+        plate_id,
+        plate_num
+    ))
 
 
 if __name__ == '__main__':
     rospy.init_node('licensedriver', anonymous=True)
     ld = LicenceDetector()
     locr = LicenceOCR()
-    orig_img = cv2.imread('experiments/test_images/74.png')
-    # lp = LicencePlate(orig_img)
-    # if lp.valid:
-    #     res = locr.read_licence(lp)
-    #     print(res)
-    #     cv2.imshow('a', lp.img)
-    #     cv2.waitKey(0)
     bridge = CvBridge()
+    scoring_pub = rospy.Publisher('/license_plate', String, queue_size=1)
+    lid_pub = rospy.Publisher('/license_id', Int16, queue_size=1)
+    rospy.sleep(1)
+    scoring_pub.publish(str('{},{},0,XR58').format(
+        TEAM_NAME,
+        TEAM_PWD
+    ))
     rospy.Subscriber("/R1/pi_camera/image_raw", Image, ld.process_image)
     rospy.spin()

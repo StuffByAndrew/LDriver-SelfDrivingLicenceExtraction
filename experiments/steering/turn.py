@@ -3,9 +3,8 @@ import rospy
 from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-from green_line_detect import detect_gl
+from ldriver.steering.road_detection import detect_gl
 from lane_detection import slope
-import math
 import numpy as np
 
 class HardTurner:
@@ -14,13 +13,14 @@ class HardTurner:
         self.aligning = False
         self.cv_bridge = CvBridge()
         self.last_line = 1.0
+        self.lost_dur = 0
 
     def left_turn(self):
         command = Twist()
-        command.linear.x = 0.22
-        command.angular.z = 0.8  
+        command.linear.x = 0.35 # 0.22
+        command.angular.z = 1.05 # 0.8  
         self.move_pub.publish(command)
-        rospy.sleep(2.2)
+        rospy.sleep(1.5)
         self.stop()
 
     def stop(self):
@@ -28,15 +28,22 @@ class HardTurner:
 
     def right_turn(self):
         command = Twist()
-        command.linear.x = 0.185
-        command.angular.z = -0.62
+        command.linear.x = 0.35 # 0.185
+        command.angular.z = -1.06 # -0.62
         self.move_pub.publish(command)
-        rospy.sleep(3)
+        rospy.sleep(1.5)
         self.stop()
 
     def straight(self, dur):
         command = Twist()
-        command.linear.x = 0.15
+        command.linear.x = 0.3
+        self.move_pub.publish(command)
+        rospy.sleep(dur)
+        self.stop()
+
+    def back(self, dur, speed=0.3):
+        command = Twist()
+        command.linear.x = -speed
         self.move_pub.publish(command)
         rospy.sleep(dur)
         self.stop()
@@ -50,9 +57,12 @@ class HardTurner:
             cv2.waitKey(1)
             print(line)
             if not len(line):
+                self.lost_dur += 1
+                if self.lost_dur > 10:
+                    self.back(0.1, speed=0.08)
                 return
             s = slope([line])
-            
+            self.lost_dur = 0 
             print(s)
             command = Twist()
             if np.isclose(0.0, s, atol=0.01):
@@ -78,18 +88,24 @@ class HardTurner:
 if __name__ == '__main__':
     rospy.init_node("turnTesting", anonymous=True)
     ht = HardTurner()
-    rospy.sleep(0.5)
+    rospy.sleep(1)
+    ht.align()
+    ht.straight(0.2)
+    ht.left_turn()
+    ht.back(0.4)
     ht.align()
     ht.left_turn()
+    ht.straight(0.25)
     ht.right_turn()
-    ht.straight(2.8)
-    ht.align()
+    ht.straight(1.5)
+    # ht.align()
     ht.right_turn()
-    ht.straight(2.6)
+    ht.straight(1.5)
     ht.align()
     ht.right_turn()
     ht.left_turn()
-    ht.straight(0.1)
-    ht.right_turn()
+    ht.back(0.2)
+    ht.left_turn()
+    ht.back(1)
     # ht.left_turn()
     # left_turn(move_pub)
