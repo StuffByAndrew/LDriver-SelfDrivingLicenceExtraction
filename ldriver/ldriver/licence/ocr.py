@@ -7,6 +7,8 @@ import string
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
+from importlib_resources import files
+import ldriver.data.models
 
 ALL_LETTERS = list(string.ascii_uppercase) + list(map(str,range(0,10)))
 sess1 = tf.Session()    
@@ -30,18 +32,25 @@ class LicenceOCR:
         '0': 'C',
     }
     alpha2dig={
+        'A': '4',
+        'B': '8',
+        'C': '6',
+        'D': '0',
+        'E': '3',
+        'F': '7',
+        'G': '6',
         'I': '1',
+        'K': '4',
         'S': '5',
         'T': '1',
-        'Z': '2'
+        'Z': '2',
     }
 
     def __init__(self, vtesting=False, experimental=False):
         self.vtest = vtesting
         self.exper = experimental
         # self.model = self.load_weights()
-        self.model = load_model('./models/best_letters_2.h5')
-
+        self.model = load_model(str(files(ldriver.data.models).joinpath('best_letters_2.h5')))
 
     def read_licence(self, licence):
         """given a LicencePlate, find the letters that make it up by CNN inference
@@ -68,7 +77,8 @@ class LicenceOCR:
             preds_oh = self.model.predict(resized_letters)
             preds = [ALL_LETTERS[np.argmax(p)] for p in preds_oh]
             conf = np.array([np.max(p) for p in preds_oh])
-
+        
+        preds[1] = self.alpha2dig.get(preds[1], preds[1])
         preds[2], preds[3] = self.dig2alpha.get(preds[2], preds[2]), self.dig2alpha.get(preds[3], preds[3])
         preds[4], preds[5] = self.alpha2dig.get(preds[4], preds[4]), self.alpha2dig.get(preds[5], preds[5])
         

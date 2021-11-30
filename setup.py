@@ -6,6 +6,6 @@ setup(
     name='ldriver',
     description='Tools for autonomous robot simulation driving',
     package_data={
-        "ldriver": ["data/licence/*.png"],
+        "ldriver": ["data/licence/*.png", "data/models/*.h5"],
     }
 )
