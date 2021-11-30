@@ -1,6 +1,17 @@
 import cv2
 import numpy as np
 
+def slope(line):
+    """ Calculates the slope of a line
+    
+    Args:
+        line (numpy.ndarray): line represented by two points
+    Returns:
+        float: slope of line
+    """
+    x1, y1, x2, y2 = line[0]
+    return float(y2-y1)/(x2-x1)
+
 def mask_rectangle(input_image, left=0, top=0, right=0, bottom=0):
     """ Returns an image with left, top, right, bottom percent of the image masked out and the remaining 
     portion untouched.

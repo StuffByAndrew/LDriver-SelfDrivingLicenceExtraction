@@ -8,6 +8,7 @@ from std_msgs.msg import Bool, Int16
 from cv_bridge import CvBridge, CvBridgeError
 from ldriver.steering.lane_detection import right_roadline_center, horizontal_distance_from_line
 from ldriver.steering.pedestrian_detection import pedestrian_crossing
+from ldriver.steering.hard_turning import HardTurner
 bridge = CvBridge()
 
 class Steering_Control:
@@ -114,25 +115,41 @@ def autopilot(image_data):
         Steering.stop()
         if Pedestrian.robot_should_cross(image):
             Steering.move_forwards(1.25)
-    #elif LicenseNumber.detected == 7 and Greenline.detected:
-    elif Greenline.detected:
-        print("Hi")
-        Steering.auto_steer(image)
+    elif LicenseNumber.detected == 1 and Greenline.detected:
+        Steering.move_forwards(.5)
+        Steering.stop()
+        ht.align()
+        ht.straight(0.2)
+        ht.left_turn()
+        ht.back(0.4)
+        ht.align()
+        ht.left_turn()
+        ht.straight(0.25)
+        ht.right_turn()
+        ht.straight(1.5)
+        ht.right_turn()
+        ht.straight(1.5)
+        ht.align()
+        ht.right_turn()
+        ht.left_turn()
+        ht.back(0.2)
+        ht.left_turn()
+        ht.back(1)
     else:
         Steering.auto_steer(image)
 
 if __name__ == "__main__":
     rospy.init_node("autopilot", anonymous=True)
     move_pub = rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1)
-    
+    ht = HardTurner()
     Steering = Steering_Control(0.20, 0.015, (0.6228, -44), move_pub)
-    Pedestrian = Pedestrian_Detection(200, 3)
+    Pedestrian = Pedestrian_Detection(200, 5)
     Redline = Detection()
     Greenline = Detection()
     LicenseNumber = Detection()
     
     rospy.sleep(0.5)
-    Steering.turn_left(3)
+    #Steering.turn_left(3)
     
     image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, autopilot, queue_size=1)
     redline_sub = rospy.Subscriber("/redline", Bool, update_redline, queue_size=1)
