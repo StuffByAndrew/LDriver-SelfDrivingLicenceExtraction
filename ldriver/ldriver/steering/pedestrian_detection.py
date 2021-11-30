@@ -1,7 +1,7 @@
 import sys
 import cv2
 import numpy as np
-from ldriver.road.lane_detection import hsv_threshold
+from ldriver.steering.lane_detection import hsv_threshold, mask_rectangle
 
 def dilate_erode(img, dilation_kernel_size=0, erosion_kernel_size=0):
     """ Denoise salt and pepper noise in an image through dilation and erosion
@@ -19,12 +19,21 @@ def dilate_erode(img, dilation_kernel_size=0, erosion_kernel_size=0):
     return img
 
 def pedestrian_crossing(current_image_input, previous_image_output, history):
+    """ Compare current image to previous image and determine if pedestrian
+
+    Args:
+        current_image_input (numpy.ndarray): current image
+        previous_image_output (numpy.ndarray): previous image output
+        history (list): list of previous non zero values
+    Returns:
+        int: running average
+    """
     current_image = hsv_threshold(current_image_input, lh=88, ls=40, lv=40, uh=113, us=255, uv=128)
     current_image = cv2.GaussianBlur(current_image, (21,21), 0)
     current_image = dilate_erode(current_image, 0, 5)
 
     if previous_image_output is None:
-        return False, current_image
+        return 0, current_image
     
     difference = cv2.absdiff(current_image, previous_image_output)
     _, thresh = cv2.threshold(difference,55,255,cv2.THRESH_BINARY)
@@ -33,4 +42,15 @@ def pedestrian_crossing(current_image_input, previous_image_output, history):
     average = sum(history) / len(history)
     return average, current_image
    
+def redline_detected(input_image, bottom_percent=1):
+    """Detects redline within the bottom_percent of the image
     
+    Args:
+        input_image (np.ndarray): input image
+        bottom_percent (float): bottom percentage of screen used to check for redline
+    Returns:
+        bool: True if redline is detected, false otherwise
+    """
+    image = mask_rectangle(input_image, left=0.2, top=(1-bottom_percent), right=0.2, bottom=0)
+    image = hsv_threshold(image, lh=0, ls=10, lv=90, uh=0, us=255, uv=255)
+    return np.any(image)

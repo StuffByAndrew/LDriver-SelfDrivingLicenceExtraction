@@ -102,7 +102,7 @@ def update_greenline(detection):
         Greenline.detected = False
 
 def update_license_number(detection):
-    LicenseNumber.detected = detection
+    LicenseNumber.detected = detection.data
 
 def autopilot(image_data):
     try:
@@ -114,8 +114,10 @@ def autopilot(image_data):
         Steering.stop()
         if Pedestrian.robot_should_cross(image):
             Steering.move_forwards(1.25)
-    elif LicenseNumber.detected == 7 and Greenline.detected:
-        pass
+    #elif LicenseNumber.detected == 7 and Greenline.detected:
+    elif Greenline.detected:
+        print("Hi")
+        Steering.auto_steer(image)
     else:
         Steering.auto_steer(image)
 
