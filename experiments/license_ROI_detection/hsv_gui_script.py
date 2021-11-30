@@ -15,12 +15,12 @@ img = cv.medianBlur(img,5)
 # Convert BGR to HSV
 hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
-uh = 130
-us = 255
-uv = 255
-lh = 110
-ls = 50
-lv = 50
+uh = 113
+us = 117
+uv = 128
+lh = 88
+ls = 28
+lv = 42
 lower_hsv = np.array([lh,ls,lv])
 upper_hsv = np.array([uh,us,uv])
 

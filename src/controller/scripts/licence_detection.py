@@ -8,7 +8,7 @@ from ldriver.licence.ocr import LicenceOCR
 import numpy as np
 from itertools import starmap
 
-HOR_LINE = u'\u2500' * 20
+HOR_LINE = '-' * 20
 
 class LicenceDetector:
     def __init__(self):

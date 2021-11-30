@@ -62,13 +62,9 @@ def pedestrian_detected(input_image):
 def redline_detected(input_image, bottom_percent=1):
     """returns true if red line is detected within the bottom_percent of the image"""
     image_height = input_image.shape[0]
-    cv2.imshow("a", input_image)
-    cv2.waitKey(0)
     mask = get_road_mask(input_image)
     image = cv2.bitwise_and(input_image, input_image, mask=mask)
     image = mask_rectangle(image, left=0.2, top=(1-bottom_percent), right=0.2, bottom=0)
-    cv2.imshow("a", image)
-    cv2.waitKey(0)
     image = hsv_threshold(image, lh=0, ls=10, lv=90, uh=0, us=255, uv=255)
     center = find_center(image)
     return False if not center else True

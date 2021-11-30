@@ -7,7 +7,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool
 from cv_bridge import CvBridge, CvBridgeError
 from lane_detection import get_roadcolor_center, get_right_lines_center, mask_rectangle, get_bottom_right_line_center, horizontal_distance_from_line
-from pedestrian_detection import pedestrian_crossing, redline_detected
+from pedestrian_detection import pedestrian_crossing, redline_detected, hsv_threshold, dilate_erode
 
 class PID_Control:
     def __init__(self, KP=0.0, KI=0.0, KD=0.0, I_limit=0.0, rate=0.0):
@@ -32,13 +32,10 @@ class PID_Control:
 pedestrian_was_crossing = False
 previous_image = None
 
-history = [0,0,0]
-def robot_should_cross(current_image, threshold):
-    global history
+def robot_should_cross(current_image):
     global previous_image
     global pedestrian_was_crossing
-    running_average, previous_image = pedestrian_crossing(current_image, previous_image, history)
-    pedestrian_currently_crossing = running_average > threshold
+    pedestrian_currently_crossing, previous_image = pedestrian_crossing(current_image, previous_image)
     if not pedestrian_currently_crossing and pedestrian_was_crossing:
         pedestrian_was_crossing, previous_image = False, None
         return True
@@ -47,45 +44,36 @@ def robot_should_cross(current_image, threshold):
         return False
 
 is_stopped = False
+previous_image = None
+person_was_crossing = False
+history = [0,0,0]
 def pid_steering(image_data):
-    global redline_detected
-    global is_stopped
-    global pedestrian_was_crossing
     global previous_image
+    global person_currently_crossing
     try:
         image = bridge.imgmsg_to_cv2(image_data, "bgr8")
     except CvBridgeError as e:
         print(e)
+    #current_image = cv2.cvtColor(current_image_input, cv2.COLOR_BGR2GRAY)
+    current_image = hsv_threshold(image, lh=88, ls=40, lv=40, uh=113, us=255, uv=128)
+    current_image = cv2.GaussianBlur(current_image, (21,21), 0)
+    current_image = dilate_erode(current_image, 0, 5)
+
+    if previous_image is None:
+        previous_image = current_image
+        print("Person Not Currently Crossing")
     
-    if redline_detected:
-        command = Twist()
-        if not is_stopped:
-            move_pub.publish(command)
-            rospy.sleep(.5)
-            is_stopped = True
-        else:
-            if robot_should_cross(image, 200):
-                command.linear.x = 0.5
-                move_pub.publish(command)
-                rospy.sleep(1.25)
-                is_stopped = False
-                redline_detected = False
-
-    else:
-        error = 0
-        centroid = get_bottom_right_line_center(image)
-        if centroid:
-            error = horizontal_distance_from_line(centroid, target_slope, target_intercept)
-        else: # if centroid not found, use previous error
-            pass
-        command = Twist()
-        command.linear.x = base_speed
-        command.angular.z = error * KP
-        move_pub.publish(command)
-
-        cv2.circle(image, centroid, 10, 255, -1)
-    cv2.imshow("image", image)
-    cv2.waitKey(3)
+    difference = cv2.absdiff(current_image, previous_image)
+    _, thresh = cv2.threshold(difference,55,255,cv2.THRESH_BINARY)
+    history.append(np.count_nonzero(thresh))
+    history.pop(0)
+    print(history)
+    print(sum(history)/len(history))
+    previous_image = current_image
+    cv2.imshow("thresh", image)
+    cv2.waitKey(1)
+    cv2.imshow("thresh", thresh)
+    cv2.waitKey(1)
 
 def turn_left(interval):
     command = Twist()
@@ -132,7 +120,7 @@ if __name__ == "__main__":
     rospy.init_node("lane_following", anonymous=True)
     move_pub = rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1)
     rospy.sleep(0.5)
-    turn_left(3)
+    #turn_left(3)
     image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, pid_steering, queue_size=1)
     detection_sub = rospy.Subscriber("/redline", Bool, callback, queue_size=1)
     
