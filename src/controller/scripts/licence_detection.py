@@ -9,10 +9,9 @@ from ldriver.licence.ocr import LicenceOCR
 import numpy as np
 from itertools import starmap
 from std_msgs.msg import String, Int16
+from scoring import TEAM_NAME, TEAM_PWD
 
 HOR_LINE = '-' * 30
-TEAM_NAME = 'Brian_N_Andrew'
-TEAM_PWD = 'multi21'
 
 class LicenceDetector:
     def __init__(self):
