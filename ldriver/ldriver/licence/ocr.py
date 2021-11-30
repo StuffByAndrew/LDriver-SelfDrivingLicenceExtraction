@@ -40,7 +40,7 @@ class LicenceOCR:
         self.vtest = vtesting
         self.exper = experimental
         # self.model = self.load_weights()
-        self.model = load_model('./models/best_letters_1.h5')
+        self.model = load_model('./models/best_letters_2.h5')
 
 
     def read_licence(self, licence):

@@ -81,5 +81,24 @@ def horizontal_distance_from_line(point, slope, y_intercept):
     line_x = float(point[1] - y_intercept)/slope
     return line_x - point_x
 
+def hsv_threshold(img, lh=0, uh=0, ls=0, us=0, lv=0, uv=0):
+    """ Thresholds an image based on hsv 
+    
+    Args:
+        lh, uh, ls, us, lv, uv (int): lower and upper hue, saturation, and value thresholds
+    """
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    cv2.medianBlur(hsv,5)
+    uh = uh
+    us = us
+    uv = uv
+    lh = lh
+    ls = ls
+    lv = lv
+    lower_hsv = np.array([lh,ls,lv])
+    upper_hsv = np.array([uh,us,uv])
+
+    return cv2.inRange(hsv, lower_hsv, upper_hsv)
+
 def flip_image(input_image):
     return np.flipud(input_image)
