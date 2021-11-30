@@ -1,0 +1,7 @@
+<launch>
+    <!-- <include file="$(find enph353_utils)/launch/sim.launch"/> -->
+    <!-- <node pkg='$(find enph353_utils)' type='run_sim.sh' name='world_sim' output="screen"/> -->
+    <node pkg="controller" type="licence_detection.py" name="licence"/>
+    <node pkg="controller" type="green_line_detection.py" name="greenline"/>
+    <node pkg="controller" type="red_line_detection.py" name="redline"/>
+</launch>
