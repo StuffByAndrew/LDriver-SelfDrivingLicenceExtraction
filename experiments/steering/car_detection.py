@@ -14,7 +14,7 @@ Car:
 lower: [0, 0, 105]
 upper: [0, 0, 200]
 """
-def car_motion_detection(current_image_input, previous_image):
+def car_motion_detection(current_image_input, previous_image, history):
     current_image = hsv_threshold(current_image_input, lh=0, ls=0, lv=105, uh=0, us=0, uv=200)
     current_image = cv2.GaussianBlur(current_image, (21,21), 0)
     current_image = dilate_erode(current_image, 0, 5)
@@ -23,15 +23,21 @@ def car_motion_detection(current_image_input, previous_image):
     difference = cv2.absdiff(current_image, previous_image)
     _, thresh = cv2.threshold(difference,55,255,cv2.THRESH_BINARY)
     previous_image = current_image
-    return np.count_nonzero(thresh), current_image
+    history.append(np.count_nonzero(thresh))
+    history.pop(0)
+    average = sum(history)/len(history)
+    return average, current_image
     
-history = [0,0,0]
+history = [10000 for _ in range(10)] 
 previous_image = None
 car_was_detected = False
 def robot_should_move(current_image, threshold):
     global previous_image
-    nonzero, previous_image = car_motion_detection(current_image, previous_image) 
-    return nonzero < threshold
+    average, previous_image = car_motion_detection(current_image, previous_image, history) 
+    car_is_detected = average < threshold
+    cv2.imshow("Image", current_image)
+    cv2.waitKey(1)
+    return car_is_detected
     
 def callback(image_data):
     global previous_image
@@ -40,19 +46,7 @@ def callback(image_data):
     except CvBridgeError as e:
         print(e)
     #current_image = cv2.cvtColor(current_image_input, cv2.COLOR_BGR2GRAY)
-    current_image = hsv_threshold(image, lh=0, ls=0, lv=105, uh=0, us=0, uv=200)
-    current_image = cv2.GaussianBlur(current_image, (21,21), 0)
-    #current_image = dilate_erode(current_image, 0, 5)
-
-    if previous_image is None:
-        previous_image = current_image
-    difference = cv2.absdiff(current_image, previous_image)
-    _, thresh = cv2.threshold(difference,55,255,cv2.THRESH_BINARY)
-    previous_image = current_image
-    # cv2.imshow("thresh", image)
-    # cv2.waitKey(1)
-    cv2.imshow("thresh", image)
-    cv2.waitKey(1)
+    print(robot_should_move(image, 20))
 
 def rotate_left(interval):
     command = Twist()
