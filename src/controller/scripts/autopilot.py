@@ -90,9 +90,10 @@ class Pedestrian_Detection:
             return False
 
 class Car_Detection:
-    def __init__(self, threshold, history_length):
+    def __init__(self, threshold, history_length, ignore=5):
         self.threshold = threshold
         self.history_length = history_length
+        self.ignore = ignore
         self.previous_image = None
         self.car_was_detected = False
         self.history = [10000 for _ in range(history_length)]
@@ -108,7 +109,10 @@ class Car_Detection:
         # else:
         #     self.car_was_detected = car_is_detected
         #     return False
-        average, self.previous_image = car_motion_detection(current_image, self.previous_image, self.history) 
+        average, self.previous_image = car_motion_detection(current_image, self.previous_image, self.history)
+        if car_motion_detection.calls <= self.ignore: 
+            average = 0
+            self.history = [10000 for _ in range(self.history_length)]
         car_is_detected = 0 < average < self.threshold
         return car_is_detected
 
@@ -222,6 +226,7 @@ class Detection:
     def __init__(self):
         self.detected = None
         self.duration = 0
+        self.count = 0
 
 def update_redline(detection):
     if detection.data:
@@ -239,6 +244,8 @@ cache = [0 for _ in range(5)]
 def update_license_number(detection):
     cache.append(detection.data)
     cache.pop(0)
+    if detection.data == 1 and LicenseNumber.detected != 1:
+        Lap.count += 1
     if detection.data == LicenseNumber.detected:
         LicenseNumber.duration += 1
     else:
@@ -271,7 +278,9 @@ def autopilot(image_data):
     elif LicenseNumber.detected == 1 \
         and LicenseNumber.duration > 1 \
             and Greenline.detected \
-                and not Innerloop.detected:
+                and not Innerloop.detected\
+                    and Lap.count > 1 \
+                        and Lap.count % 2 == 0:
         Innerloop.detected = True
     else:
         if Innerloop.detected:
@@ -291,7 +300,7 @@ if __name__ == "__main__":
     move_pub = rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1)
     ht = HardTurner(move_pub)
 
-    Steering = Steering_Control(0.18, 0.015, (0.6228, -44), move_pub)
+    Steering = Steering_Control(0.15, 0.015, (0.6228, -44), move_pub)
     Pedestrian = Pedestrian_Detection(200, 3)
     Redline = Detection()
     Greenline = Detection()
@@ -299,6 +308,7 @@ if __name__ == "__main__":
     Aligned = Detection()
     Car = Car_Detection(15, 5)
     Innerloop = Detection()
+    Lap = Detection()
     
     rospy.sleep(0.5)
     Steering.turn_left(3)

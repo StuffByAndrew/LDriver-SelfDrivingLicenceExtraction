@@ -5,13 +5,14 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge, CvBridgeError
 from lane_detection import mask_rectangle
-from pedestrian_detection import hsv_threshold, dilate_erode
+from pedestrian_detection import hsv_threshold, dilate_erode, function_counter
 bridge = CvBridge()
 """
 Car: 
 lower: [0, 0, 105]
 upper: [0, 0, 200]
 """
+@function_counter
 def car_motion_detection(current_image_input, previous_image, history):
     current_image = mask_rectangle(current_image_input, bottom=0.4, right=0.65)
     cv2.imshow("Image", current_image)
