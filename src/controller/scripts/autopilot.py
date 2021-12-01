@@ -90,13 +90,14 @@ class Pedestrian_Detection:
             return False
 
 class Car_Detection:
-    def __init__(self, threshold, history_length, ignore=5):
+    def __init__(self, threshold, history_length, ignore=3):
         self.threshold = threshold
         self.history_length = history_length
         self.ignore = ignore
         self.previous_image = None
         self.car_was_detected = False
-        self.history = [10000 for _ in range(history_length)]
+        self.history = [0 for _ in range(history_length)]
+        self.was_over = False
     
     def robot_can_move(self, current_image):
         # average, self.previous_image = car_motion_detection(current_image, self.previous_image, self.history) 
@@ -112,9 +113,11 @@ class Car_Detection:
         average, self.previous_image = car_motion_detection(current_image, self.previous_image, self.history)
         if car_motion_detection.calls <= self.ignore: 
             average = 0
-            self.history = [10000 for _ in range(self.history_length)]
-        car_is_detected = 0 < average < self.threshold
-        return car_is_detected
+            self.history = [0 for _ in range(self.history_length)]
+        is_under = average <= self.threshold
+        can_move = self.was_over and is_under
+        self.was_over = average > self.threshold
+        return can_move
 
 class HardTurner:
     def __init__(self, move_pub):
@@ -278,9 +281,9 @@ def autopilot(image_data):
     elif LicenseNumber.detected == 1 \
         and LicenseNumber.duration > 1 \
             and Greenline.detected \
-                and not Innerloop.detected\
-                    and Lap.count > 1 \
-                        and Lap.count >= 2:
+                and not Innerloop.detected:
+                    #and Lap.count > 1 \
+                        #and Lap.count >= 2:
         Innerloop.detected = True
     else:
         if Innerloop.detected:
