@@ -28,11 +28,6 @@ class Steering_Control:
     def auto_steer(self, image):
         centroid = right_roadline_center(image)
         error = self.get_error(centroid)
-        #--------------------------
-        cv2.circle(image, centroid, 10, 255, -1)
-        cv2.imshow("image", image)
-        cv2.waitKey(3)
-        #--------------------------
         command = Twist()
         command.linear.x = self.base_speed
         command.angular.z = error
@@ -240,15 +235,15 @@ def update_greenline(detection):
     else:
         Greenline.detected = False
 
+cache = [0 for _ in range(5)]
 def update_license_number(detection):
+    cache.append(detection.data)
+    cache.pop(0)
     if detection.data == LicenseNumber.detected:
         LicenseNumber.duration += 1
     else:
         LicenseNumber.duration = 0
     LicenseNumber.detected = detection.data
-
-def update_image(image):
-    Current_Image.detected = image
 
 def autopilot(image_data):
     try:
@@ -256,24 +251,40 @@ def autopilot(image_data):
     except CvBridgeError as e:
         print(e)
     #-------
-    update_image(image)
+    text = "LicenseNumber:{}, Duration:{}, Greenline:{}, Innerloop:{}".format(
+        LicenseNumber.detected == 1,
+        LicenseNumber.duration >= 1,
+        Greenline.detected,
+        not Innerloop.detected
+    )
+    cv2.imshow("image", image)
+    cv2.putText(image, str(cache), (20,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(image, text, (20,60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.waitKey(1)
+    
     if Redline.detected:
         Steering.stop()
         if Pedestrian.robot_should_cross(image):
             rospy.logdebug("Robot Crossing.\n-----------------------")
             Steering.move_forwards(1.25)
             Redline.was_detected = False
-    elif LicenseNumber.detected == 1 and LicenseNumber.duration >= 1 and Greenline.detected:
-        if not Aligned.detected:
-            Steering.stop()
-            ht.face_inwards()
-            Aligned.detected = True
-        elif Car.robot_can_move(image): 
-            ht.execute_hardturn()
+    elif LicenseNumber.detected == 1 \
+        and LicenseNumber.duration >= 1 \
+            and Greenline.detected \
+                and not Innerloop.detected:
+        Innerloop.detected = True
     else:
-        Steering.auto_steer(image)
-        cv2.imshow("image", image)
-        cv2.waitKey(1)
+        if Innerloop.detected:
+            if not Aligned.detected:
+                Steering.stop()
+                ht.face_inwards()
+                Aligned.detected = True
+            elif Car.robot_can_move(image): 
+                ht.execute_hardturn()
+                Innerloop.detected = False
+        else:
+            Steering.auto_steer(image)
+    
 
 if __name__ == "__main__":
     rospy.init_node("autopilot", anonymous=True, log_level=rospy.DEBUG)
@@ -285,9 +296,9 @@ if __name__ == "__main__":
     Redline = Detection()
     Greenline = Detection()
     LicenseNumber = Detection()
-    Current_Image = Detection()
     Aligned = Detection()
     Car = Car_Detection(15, 5)
+    Innerloop = Detection()
     
     rospy.sleep(0.5)
     Steering.turn_left(3)
