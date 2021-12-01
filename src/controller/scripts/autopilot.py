@@ -114,10 +114,21 @@ class Car_Detection:
         if car_motion_detection.calls <= self.ignore: 
             average = 0
             self.history = [0 for _ in range(self.history_length)]
-        is_under = average <= self.threshold
-        can_move = self.was_over and is_under
-        self.was_over = average > self.threshold
-        return can_move
+        can_move = self.was_over and average == 0
+        #---------------
+        # copy = self.previous_image.copy()
+        # cv2.putText(copy, str(can_move), (20,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        # cv2.putText(copy, str(average), (20,60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        # cv2.imshow("Image", copy)
+        # cv2.waitKey(1)
+        #--------------
+        if can_move:
+            self.was_over = False
+            return True
+        elif not self.was_over:
+            self.was_over = average > self.threshold
+        return False
+        
 
 class HardTurner:
     def __init__(self, move_pub):
@@ -261,17 +272,17 @@ def autopilot(image_data):
     except CvBridgeError as e:
         print(e)
     #-------
-    text = "LicenseNumber:{}, Duration:{}, Greenline:{}, Innerloop:{}".format(
-        LicenseNumber.detected == 1,
-        LicenseNumber.duration > 1,
-        Greenline.detected,
-        not Innerloop.detected
-    )
-    cv2.imshow("image", image)
-    cv2.putText(image, str(cache), (20,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(image, text, (20,60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+    # text = "LicenseNumber:{}, Duration:{}, Greenline:{}, Innerloop:{}".format(
+    #     LicenseNumber.detected == 1,
+    #     LicenseNumber.duration > 1,
+    #     Greenline.detected,
+    #     not Innerloop.detected
+    # )
+    cv2.imshow("Robot_Cam", image)
+    # cv2.putText(image, str(cache), (20,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+    # cv2.putText(image, text, (20,60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
     cv2.waitKey(1)
-    
+    #--------
     if Redline.detected:
         Steering.stop()
         if Pedestrian.robot_should_cross(image):
@@ -310,7 +321,7 @@ if __name__ == "__main__":
     Greenline = Detection()
     LicenseNumber = Detection()
     Aligned = Detection()
-    Car = Car_Detection(15, 5)
+    Car = Car_Detection(100, 5)
     Innerloop = Detection()
     Lap = Detection()
     

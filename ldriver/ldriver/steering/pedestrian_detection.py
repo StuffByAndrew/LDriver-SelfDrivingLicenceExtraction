@@ -43,10 +43,12 @@ def pedestrian_crossing(current_image_input, previous_image_output, history):
         return 0, current_image
     difference = cv2.absdiff(current_image, previous_image_output)
     _, thresh = cv2.threshold(difference,55,255,cv2.THRESH_BINARY)
-    cv2.imshow("image", thresh)
-    cv2.waitKey(1)
-    cv2.imshow("image", current_image_input)
-    cv2.waitKey(1)
+    #-------
+    # cv2.imshow("image", thresh)
+    # cv2.waitKey(1)
+    # cv2.imshow("image", current_image_input)
+    # cv2.waitKey(1)
+    #-------
     history.append(np.count_nonzero(thresh))
     history.pop(0)
     running_average = sum(history) / len(history)

@@ -8,20 +8,25 @@ person:
 Lower: [88, 28, 42]
 Upper: [113, 117, 128]
 """
+"""
+Car
+Lower: [0,0,0]
+Upper: [40,150,18]
+"""
 
-img = cv.imread('img_cmd_data/1.png',cv.IMREAD_COLOR)
+img = cv.imread('img_cmd_data/14.png',cv.IMREAD_COLOR)
 
 img = cv.medianBlur(img,5)
 
 # Convert BGR to HSV
 hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 
-uh = 190
-us = 80
-uv = 128
-lh = 55
-ls = 4
-lv = 82
+uh = 255
+us = 255
+uv = 255
+lh = 0
+ls = 0
+lv = 0
 lower_hsv = np.array([lh,ls,lv])
 upper_hsv = np.array([uh,us,uv])
 
