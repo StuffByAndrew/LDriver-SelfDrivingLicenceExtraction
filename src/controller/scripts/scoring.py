@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 import rospy
 from std_msgs.msg import String
 
@@ -17,7 +16,7 @@ def format_message(plate_id, plate_str):
 if __name__ == "__main__":
     start_msg, end_msg = String(), String()
     start_msg.data, end_msg.data = format_message(0,"0000"), format_message(-1,"0000")
-    rospy.init_node("scoring", anonymous=True)
+    rospy.init_node("scoring", anonymous=True, log_level=rospy.DEBUG)
     timer_pub = rospy.Publisher("/license_plate", String, queue_size=1)
     rospy.sleep(0.5)
     
