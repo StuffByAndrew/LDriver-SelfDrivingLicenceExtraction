@@ -270,11 +270,10 @@ def autopilot(image_data):
             Steering.stop()
             ht.face_inwards()
             Aligned.detected = True
-        elif Car.robot_can_move(image, 20): # TODO: detect car
+        elif Car.robot_can_move(image): 
             ht.execute_hardturn()
     else:
-        #Steering.auto_steer(image)
-        print(Car.robot_can_move(image))
+        Steering.auto_steer(image)
         cv2.imshow("image", image)
         cv2.waitKey(1)
 
@@ -293,7 +292,7 @@ if __name__ == "__main__":
     Car = Car_Detection(15, 5)
     
     rospy.sleep(0.5)
-    #Steering.turn_left(3)
+    Steering.turn_left(3)
     
     image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, autopilot, queue_size=1)
     redline_sub = rospy.Subscriber("/redline", Bool, update_redline, queue_size=1)
