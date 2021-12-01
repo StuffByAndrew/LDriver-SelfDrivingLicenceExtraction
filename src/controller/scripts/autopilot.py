@@ -222,8 +222,6 @@ class HardTurner:
         self.back(0.2)
         self.left_turn()
         self.back(1.2)
-        self.align()
-        self.back(1)
 
 class Detection:
     def __init__(self):
@@ -265,7 +263,7 @@ def autopilot(image_data):
             rospy.logdebug("Robot Crossing.\n-----------------------")
             Steering.move_forwards(1.25)
             Redline.was_detected = False
-    elif LicenseNumber.detected == 1 and LicenseNumber.duration > 3 and Greenline.detected:
+    elif LicenseNumber.detected == 1 and LicenseNumber.duration >= 1 and Greenline.detected:
         if not Aligned.detected:
             Steering.stop()
             ht.face_inwards()
