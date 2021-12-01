@@ -195,15 +195,6 @@ class HardTurner:
         while self.aligning:
             rospy.sleep(1)
     
-<<<<<<< Updated upstream
-    def execute_hardturn(self):
-        ht.straight(0.2)
-        ht.align()
-        ht.straight(0.2)
-        ht.left_turn()
-        ht.back(0.4)
-        ht.align()
-=======
     def face_inwards(self):
         self.straight(0.2)
         self.align()
@@ -213,27 +204,26 @@ class HardTurner:
         self.align()
     
     def execute_hardturn(self):
->>>>>>> Stashed changes
         # P7
-        ht.left_turn()
-        ht.straight(0.25)
-        ht.right_turn()
-        ht.stop()
-        ht.back(0.8)
+        self.left_turn()
+        self.straight(0.25)
+        self.right_turn()
+        self.stop()
+        self.back(0.8)
         # P8
-        ht.straight(2.2)
-        ht.right_turn()
-        ht.straight(1.5)
-        ht.align()
-        ht.right_turn()
-        ht.straight(0.3)
+        self.straight(2.2)
+        self.right_turn()
+        self.straight(1.5)
+        self.align()
+        self.right_turn()
+        self.straight(0.3)
         # Back Outside
-        ht.left_turn()
-        ht.back(0.2)
-        ht.left_turn()
-        ht.back(1.2)
-        ht.align()
-        ht.back(1)
+        self.left_turn()
+        self.back(0.2)
+        self.left_turn()
+        self.back(1.2)
+        self.align()
+        self.back(1)
 
 class Detection:
     def __init__(self):
@@ -275,12 +265,6 @@ def autopilot(image_data):
             rospy.logdebug("Robot Crossing.\n-----------------------")
             Steering.move_forwards(1.25)
             Redline.was_detected = False
-<<<<<<< Updated upstream
-    elif LicenseNumber.detected == 1 and LicenseNumber.duration >= 1 and Greenline.detected:
-        Steering.stop()
-        # aligned with turn into center       
-        ht.execute_hardturn()
-=======
     elif LicenseNumber.detected == 1 and LicenseNumber.duration > 3 and Greenline.detected:
         if not Aligned.detected:
             Steering.stop()
@@ -288,7 +272,6 @@ def autopilot(image_data):
             Aligned.detected = True
         elif Car.robot_can_move(image, 20): # TODO: detect car
             ht.execute_hardturn()
->>>>>>> Stashed changes
     else:
         #Steering.auto_steer(image)
         print(Car.robot_can_move(image))
