@@ -164,6 +164,13 @@ class HardTurner:
         rospy.sleep(dur)
         self.stop()
 
+    def twist(self, dir, dur):
+        command = Twist()
+        command.angular.z = dir
+        self.move_pub.publish(command)
+        rospy.sleep(dur)
+        self.stop()
+
     def back(self, dur, speed=0.3):
         command = Twist()
         command.linear.x = -speed
@@ -219,12 +226,13 @@ class HardTurner:
     def execute_hardturn(self):
         # P7
         self.left_turn()
-        self.straight(0.25)
+        self.straight(0.22)
         self.right_turn()
         self.stop()
         self.back(0.8)
+        self.twist(dir=-0.5, dur=0.1)
         # P8
-        self.straight(2.2)
+        self.straight(2.1)
         self.right_turn()
         self.straight(1.5)
         self.align()
@@ -272,6 +280,7 @@ def autopilot(image_data):
     except CvBridgeError as e:
         print(e)
     #-------
+<<<<<<< Updated upstream
     # text = "LicenseNumber:{}, Duration:{}, Greenline:{}, Innerloop:{}".format(
     #     LicenseNumber.detected == 1,
     #     LicenseNumber.duration > 1,
@@ -281,6 +290,17 @@ def autopilot(image_data):
     cv2.imshow("Robot_Cam", image)
     # cv2.putText(image, str(cache), (20,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
     # cv2.putText(image, text, (20,60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+=======
+    text = "LicenseNumber:{}, Duration:{}, Greenline:{}, Innerloop:{}".format(
+        LicenseNumber.detected == 1,
+        LicenseNumber.duration > 0,
+        Greenline.detected,
+        not Innerloop.detected
+    )
+    cv2.imshow("image", image)
+    cv2.putText(image, str(cache), (20,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+    cv2.putText(image, text, (20,60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
+>>>>>>> Stashed changes
     cv2.waitKey(1)
     #--------
     if Redline.detected:
@@ -293,8 +313,7 @@ def autopilot(image_data):
         and LicenseNumber.duration > 1 \
             and Greenline.detected \
                 and not Innerloop.detected \
-                    and Lap.count > 1 \
-                        and Lap.count >= 2:
+                    and Lap.count >= 1:
         Innerloop.detected = True
     else:
         if Innerloop.detected:
@@ -315,7 +334,7 @@ if __name__ == "__main__":
     move_pub = rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1)
     ht = HardTurner(move_pub)
 
-    Steering = Steering_Control(0.15, 0.015, (0.6228, -44), move_pub)
+    Steering = Steering_Control(0.23, 0.015, (0.6228, -44), move_pub)
     Pedestrian = Pedestrian_Detection(200, 3)
     Redline = Detection()
     Greenline = Detection()
