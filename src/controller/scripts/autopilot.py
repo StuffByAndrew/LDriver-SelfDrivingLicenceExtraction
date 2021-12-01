@@ -235,7 +235,7 @@ def autopilot(image_data):
         Steering.auto_steer(image)
 
 if __name__ == "__main__":
-    rospy.init_node("autopilot", anonymous=True)
+    rospy.init_node("autopilot", anonymous=True, log_level=rospy.DEBUG)
     move_pub = rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1)
     ht = HardTurner(move_pub)
     Steering = Steering_Control(0.20, 0.015, (0.6228, -44), move_pub)
