@@ -53,8 +53,8 @@ class HardTurner:
             img = self.cv_bridge.imgmsg_to_cv2(data, "bgr8")
             line, threshed = detect_gl(img)
             h = threshed.shape[0]
-            cv2.imshow('testing', threshed)
-            cv2.waitKey(1)
+            # cv2.imshow('testing', threshed)
+            # cv2.waitKey(1)
             print(line)
             if not len(line):
                 self.lost_dur += 1
@@ -68,15 +68,15 @@ class HardTurner:
             if np.isclose(0.0, s, atol=0.01):
                 mean_y = np.mean([line[1], line[3]])
                 if mean_y < 9*h//10:
-                    command.linear.x = 0.02
+                    command.linear.x = 0.08
                 elif np.isclose(self.last_line, s):
                     self.image_sub.unregister()
                     self.aligning = False
                     print('aligned')
             elif s > 0:
-                command.angular.z = -0.05
+                command.angular.z = -0.07
             elif s < 0:
-                command.angular.z = 0.05
+                command.angular.z = 0.07
             self.last_line  = s
             self.move_pub.publish(command)
         
@@ -106,6 +106,6 @@ if __name__ == '__main__':
     ht.left_turn()
     ht.back(0.2)
     ht.left_turn()
-    ht.back(1)
+    ht.back(1.3)
     # ht.left_turn()
     # left_turn(move_pub)

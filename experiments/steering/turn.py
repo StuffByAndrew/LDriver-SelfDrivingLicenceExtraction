@@ -8,8 +8,8 @@ from lane_detection import slope
 import numpy as np
 
 class HardTurner:
-    def __init__(self):
-        self.move_pub = rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1)
+    def __init__(self, move_pub):
+        self.move_pub = move_pub
         self.aligning = False
         self.cv_bridge = CvBridge()
         self.last_line = 1.0
@@ -87,7 +87,7 @@ class HardTurner:
 
 if __name__ == '__main__':
     rospy.init_node("turnTesting", anonymous=True)
-    ht = HardTurner()
+    ht = HardTurner(move_pub=rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1))
     rospy.sleep(1)
     ht.align()
     ht.straight(0.2)

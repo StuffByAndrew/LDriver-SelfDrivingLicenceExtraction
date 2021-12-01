@@ -1,5 +1,10 @@
 <launch>
     <!-- <include file="$(find enph353_utils)/launch/sim.launch"/> -->
     <!-- <node pkg='$(find enph353_utils)' type='run_sim.sh' name='world_sim' output="screen"/> -->
-    <node pkg="data_collection" type="letter_collector" name="lettercollector"/>
+    <node pkg="data_collection" type="letter_collector.py" name="lettercollector"/>
+    <node pkg="controller" type="licence_detection.py" name="licence"/>
+    <node pkg="controller" type="green_line_detection.py" name="greenline"/>
+    <node pkg="controller" type="red_line_detection.py" name="redline"/>
+    <node pkg="controller" type="image2.py" name="image2"/>
+    <node pkg="controller" type="autopilot.py" name="autopilot"/>
 </launch>

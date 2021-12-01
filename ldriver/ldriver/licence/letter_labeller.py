@@ -39,12 +39,16 @@ def main(source):
     labels = {}
     if os.path.isfile(labels_file):
             with open(labels_file, 'r') as f:
-                labels = json.load(f)  
+                labels = json.load(f)
 
-    for imgf in glob.glob('./plate_data/*.png'):
+    for imgf in sorted(glob.glob('./plate_data/*.png')):
         file_n = re.findall(r'\d+', imgf)[0]
+        print(file_n)
+        if file_n in labels:
+            print('already labeled {}'.format(file_n))
+            continue
         img = cv2.imread(imgf, cv2.IMREAD_UNCHANGED)
-        cv2.imshow('labelling {}'.format(file_n), img)
+        cv2.imshow('labelling', img)
         key = cv2.waitKey(0)
         logging.debug(key)
         if key == 59:
@@ -55,13 +59,14 @@ def main(source):
                     label = ALL_LETTERS[key-cv_letter_offset] if is_cv_alpha(key) else ALL_LETTERS[key-cv_number_offset+26]
                     print(label)                
                     labels[re.findall(r'\d+', imgf)[0]] = label
+                    with open(labels_file, 'w+') as f:
+                        json.dump(labels, f)
                     break
                 except IndexError:
                     print('invalid keyboard input')
                     continue
 
-    with open(labels_file, 'w+') as f:
-        json.dump(labels, f)
+    
     has_all_numbers(labels)
 
     

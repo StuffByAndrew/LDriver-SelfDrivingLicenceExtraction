@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import json
 from ldriver.licence.detection import LicencePlate
 from ldriver.licence.ocr import LicenceOCR

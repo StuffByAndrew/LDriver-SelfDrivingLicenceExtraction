@@ -50,7 +50,9 @@ class LicenceOCR:
         self.vtest = vtesting
         self.exper = experimental
         # self.model = self.load_weights()
-        self.model = load_model(str(files(ldriver.data.models).joinpath('best_letters_2.h5')))
+        model_file = str(files(ldriver.data.models).joinpath('best_letters_3.h5'))
+        print('Loading model file: {}'.format(model_file))
+        self.model = load_model(model_file)
 
     def read_licence(self, licence):
         """given a LicencePlate, find the letters that make it up by CNN inference
