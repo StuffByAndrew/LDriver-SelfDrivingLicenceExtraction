@@ -54,7 +54,7 @@ class Steering_Control:
     
     def turn_left(self, interval):
         command = Twist()
-        command.linear.x = 0.2
+        command.linear.x = 0.19
         command.angular.z = 0.62    
         self.move_pub.publish(command)
         rospy.sleep(interval)
@@ -241,7 +241,7 @@ def autopilot(image_data):
         Steering.auto_steer(image)
 
 if __name__ == "__main__":
-    rospy.init_node("autopilot", anonymous=True)
+    rospy.init_node("autopilot", anonymous=True, log_level=rospy.DEBUG)
     move_pub = rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1)
     ht = HardTurner(move_pub)
 
