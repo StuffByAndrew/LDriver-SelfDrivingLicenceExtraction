@@ -281,9 +281,9 @@ def autopilot(image_data):
     elif LicenseNumber.detected == 1 \
         and LicenseNumber.duration > 1 \
             and Greenline.detected \
-                and not Innerloop.detected:
-                    #and Lap.count > 1 \
-                        #and Lap.count >= 2:
+                and not Innerloop.detected \
+                    and Lap.count > 1 \
+                        and Lap.count >= 2:
         Innerloop.detected = True
     else:
         if Innerloop.detected:
