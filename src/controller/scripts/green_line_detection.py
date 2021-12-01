@@ -16,8 +16,8 @@ def green_line(image_data):
     detection = Bool()
     line, thresh = detect_gl(image)
     rospy.loginfo(str(line))
-    # cv2.imshow('testing', thresh)
-    # cv2.waitKey(1)
+    cv2.imshow('testing', thresh)
+    cv2.waitKey(1)
     if len(line):
         detection.data = True
     detection_pub.publish(detection)

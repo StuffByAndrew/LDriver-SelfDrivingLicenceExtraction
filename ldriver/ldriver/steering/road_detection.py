@@ -8,7 +8,7 @@ def detect_gl(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     
     u = np.array([90, 80, 129])
-    l = np.array([55, 4, 82])
+    l = np.array([55, 9, 82])
     thresh = cv2.inRange(img, l, u)
     thresh = cv2.Canny(thresh, 50, 150)
     linesP = cv2.HoughLinesP(thresh.astype(np.uint8), rho=1, theta=np.pi/180, threshold=15, minLineLength=200, maxLineGap=50)

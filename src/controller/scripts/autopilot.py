@@ -253,7 +253,7 @@ def autopilot(image_data):
     #-------
     text = "LicenseNumber:{}, Duration:{}, Greenline:{}, Innerloop:{}".format(
         LicenseNumber.detected == 1,
-        LicenseNumber.duration > 2,
+        LicenseNumber.duration > 1,
         Greenline.detected,
         not Innerloop.detected
     )
@@ -269,7 +269,7 @@ def autopilot(image_data):
             Steering.move_forwards(1.25)
             Redline.was_detected = False
     elif LicenseNumber.detected == 1 \
-        and LicenseNumber.duration > 2 \
+        and LicenseNumber.duration > 1 \
             and Greenline.detected \
                 and not Innerloop.detected:
         Innerloop.detected = True
