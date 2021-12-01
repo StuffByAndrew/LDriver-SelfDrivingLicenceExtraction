@@ -62,17 +62,30 @@ class Steering_Control:
         self.move_pub.publish(Twist())
 
 class Pedestrian_Detection:
-    def __init__(self, threshold, history_length):
+    def __init__(self, threshold, history_length, ignore=8):
         self.threshold = threshold
-        self.history = [0 for i in range(history_length)]
+        self.history_length = history_length
+        self.ignore = ignore
         self.previous_image = None
         self.pedestrian_was_crossing = False
+        self.history = [0 for _ in range(history_length)]
 
     def robot_should_cross(self, current_image):
         running_average, self.previous_image = pedestrian_crossing(current_image, self.previous_image, self.history)
+
+        if pedestrian_crossing.calls <= self.ignore:
+            running_average = 0
+            self.history = [0 for _ in range(self.history_length)]
+            
         pedestrian_currently_crossing = running_average > self.threshold
+        #---------------------
+        if pedestrian_currently_crossing: rospy.logdebug("currently moving: {}, {}".format(running_average, self.history))
+        else: rospy.logdebug("not moving: {}, {}".format(running_average, self.history))
+        #---------------------
         if not pedestrian_currently_crossing and self.pedestrian_was_crossing:
+            pedestrian_crossing.calls = 0
             self.pedestrian_was_crossing, self.previous_image = False, None
+            self.history = [0 for i in range(self.history_length)]
             return True
         else:
             self.pedestrian_was_crossing = pedestrian_currently_crossing
@@ -80,15 +93,7 @@ class Pedestrian_Detection:
 
 class Detection:
     def __init__(self):
-        self._redline_detected = None
-    
-    @property
-    def detected(self):
-        return self._redline_detected
-    
-    @detected.setter
-    def detected(self, update):
-        self._redline_detected = update
+        self.detected = None
 
 def update_redline(detection):
     if detection.data:
@@ -114,7 +119,9 @@ def autopilot(image_data):
     if Redline.detected:
         Steering.stop()
         if Pedestrian.robot_should_cross(image):
+            rospy.logdebug("Robot Crossing.\n-----------------------")
             Steering.move_forwards(1.25)
+            Redline.was_detected = False
     elif LicenseNumber.detected == 1 and Greenline.detected:
         Steering.move_forwards(.5)
         Steering.stop()
@@ -143,13 +150,13 @@ if __name__ == "__main__":
     move_pub = rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1)
     ht = HardTurner()
     Steering = Steering_Control(0.20, 0.015, (0.6228, -44), move_pub)
-    Pedestrian = Pedestrian_Detection(200, 5)
+    Pedestrian = Pedestrian_Detection(200, 3)
     Redline = Detection()
     Greenline = Detection()
     LicenseNumber = Detection()
     
     rospy.sleep(0.5)
-    #Steering.turn_left(3)
+    Steering.turn_left(3)
     
     image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, autopilot, queue_size=1)
     redline_sub = rospy.Subscriber("/redline", Bool, update_redline, queue_size=1)
