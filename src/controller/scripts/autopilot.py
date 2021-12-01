@@ -7,6 +7,7 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool, Int16
 from cv_bridge import CvBridge, CvBridgeError
+from ldriver.steering.car_detection import robot_can_move, car_motion_detection
 from ldriver.steering.lane_detection import right_roadline_center, horizontal_distance_from_line
 from ldriver.steering.pedestrian_detection import pedestrian_crossing
 from ldriver.steering.road_detection import detect_gl
@@ -93,6 +94,29 @@ class Pedestrian_Detection:
             self.pedestrian_was_crossing = pedestrian_currently_crossing
             return False
 
+class Car_Detection:
+    def __init__(self, threshold, history_length):
+        self.threshold = threshold
+        self.history_length = history_length
+        self.previous_image = None
+        self.car_was_detected = False
+        self.history = [10000 for _ in range(history_length)]
+    
+    def robot_can_move(self, current_image):
+        # average, self.previous_image = car_motion_detection(current_image, self.previous_image, self.history) 
+        # print(average)
+        # car_is_detected = average > self.threshold
+        # if not car_is_detected and self.car_was_detected:
+        #     self.car_was_detected, self.previous_image = False, None
+        #     self.history = [10000 for _ in range(self.history_length)]
+        #     return True
+        # else:
+        #     self.car_was_detected = car_is_detected
+        #     return False
+        average, self.previous_image = car_motion_detection(current_image, self.previous_image, self.history) 
+        car_is_detected = 0 < average < self.threshold
+        return car_is_detected
+
 class HardTurner:
     def __init__(self, move_pub):
         self.move_pub = move_pub
@@ -171,6 +195,7 @@ class HardTurner:
         while self.aligning:
             rospy.sleep(1)
     
+<<<<<<< Updated upstream
     def execute_hardturn(self):
         ht.straight(0.2)
         ht.align()
@@ -178,6 +203,17 @@ class HardTurner:
         ht.left_turn()
         ht.back(0.4)
         ht.align()
+=======
+    def face_inwards(self):
+        self.straight(0.2)
+        self.align()
+        self.straight(0.2)
+        self.left_turn()
+        self.back(0.4)
+        self.align()
+    
+    def execute_hardturn(self):
+>>>>>>> Stashed changes
         # P7
         ht.left_turn()
         ht.straight(0.25)
@@ -239,12 +275,25 @@ def autopilot(image_data):
             rospy.logdebug("Robot Crossing.\n-----------------------")
             Steering.move_forwards(1.25)
             Redline.was_detected = False
+<<<<<<< Updated upstream
     elif LicenseNumber.detected == 1 and LicenseNumber.duration >= 1 and Greenline.detected:
         Steering.stop()
         # aligned with turn into center       
         ht.execute_hardturn()
+=======
+    elif LicenseNumber.detected == 1 and LicenseNumber.duration > 3 and Greenline.detected:
+        if not Aligned.detected:
+            Steering.stop()
+            ht.face_inwards()
+            Aligned.detected = True
+        elif Car.robot_can_move(image, 20): # TODO: detect car
+            ht.execute_hardturn()
+>>>>>>> Stashed changes
     else:
-        Steering.auto_steer(image)
+        #Steering.auto_steer(image)
+        print(Car.robot_can_move(image))
+        cv2.imshow("image", image)
+        cv2.waitKey(1)
 
 if __name__ == "__main__":
     rospy.init_node("autopilot", anonymous=True, log_level=rospy.DEBUG)
@@ -257,9 +306,11 @@ if __name__ == "__main__":
     Greenline = Detection()
     LicenseNumber = Detection()
     Current_Image = Detection()
+    Aligned = Detection()
+    Car = Car_Detection(15, 5)
     
     rospy.sleep(0.5)
-    Steering.turn_left(3)
+    #Steering.turn_left(3)
     
     image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, autopilot, queue_size=1)
     redline_sub = rospy.Subscriber("/redline", Bool, update_redline, queue_size=1)
