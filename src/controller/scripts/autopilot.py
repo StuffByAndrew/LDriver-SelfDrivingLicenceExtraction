@@ -170,6 +170,30 @@ class HardTurner:
         self.image_sub = rospy.Subscriber("/R1/pi_camera/image_raw2", Image, aligning, queue_size=1)
         while self.aligning:
             rospy.sleep(1)
+    
+    def execute_hardturn(self):
+        self.straight(0.2)
+        self.align()
+        self.straight(0.2)
+        self.left_turn()
+        self.back(0.4)
+        self.align()
+        # P7
+        self.left_turn()
+        self.straight(0.35)
+        self.right_turn()
+        self.back(0.2)
+        # P8
+        self.straight(1.7)
+        self.right_turn()
+        self.straight(1.5)
+        self.align()
+        self.right_turn()
+        # Back Outside
+        self.left_turn()
+        self.back(0.2)
+        self.left_turn()
+        self.back(1)
 
 class Detection:
     def __init__(self):
@@ -213,30 +237,7 @@ def autopilot(image_data):
             Redline.was_detected = False
     elif LicenseNumber.detected == 1 and LicenseNumber.duration > 3 and Greenline.detected:
         Steering.stop()
-        # aligned with turn into center
-        ht.straight(0.2)
-        ht.align()
-        ht.straight(0.2)
-        ht.left_turn()
-        ht.back(0.4)
-        ht.align()
-        # P7
-        ht.left_turn()
-        ht.straight(0.35)
-        ht.right_turn()
-        ht.back(0.2)
-        # P8
-        ht.straight(1.7)
-        ht.right_turn()
-        ht.straight(1.5)
-        ht.align()
-        ht.right_turn()
-        # Back Outside
-        ht.left_turn()
-        ht.back(0.2)
-        ht.left_turn()
-        ht.back(1)
-        
+        ht.execute_hardturn()
     else:
         Steering.auto_steer(image)
 
