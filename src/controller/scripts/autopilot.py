@@ -294,6 +294,7 @@ def autopilot(image_data):
             elif Car.robot_can_move(image): 
                 ht.execute_hardturn()
                 Innerloop.detected = False
+                Aligned.detected = False
         else:
             Steering.auto_steer(image)
     
