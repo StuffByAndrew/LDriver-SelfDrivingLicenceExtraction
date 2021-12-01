@@ -13,7 +13,7 @@ lower: [0, 0, 105]
 upper: [0, 0, 200]
 """
 def car_motion_detection(current_image_input, previous_image, history):
-    current_image = mask_rectangle(current_image_input, bottom=0.4, right=0.5)
+    current_image = mask_rectangle(current_image_input, bottom=0.4, right=0.65)
     cv2.imshow("Image", current_image)
     cv2.waitKey(1)
     current_image = hsv_threshold(current_image, lh=0, ls=0, lv=105, uh=0, us=0, uv=200)

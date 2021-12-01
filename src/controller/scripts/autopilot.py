@@ -291,7 +291,7 @@ if __name__ == "__main__":
     move_pub = rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1)
     ht = HardTurner(move_pub)
 
-    Steering = Steering_Control(0.20, 0.015, (0.6228, -44), move_pub)
+    Steering = Steering_Control(0.18, 0.015, (0.6228, -44), move_pub)
     Pedestrian = Pedestrian_Detection(200, 3)
     Redline = Detection()
     Greenline = Detection()
