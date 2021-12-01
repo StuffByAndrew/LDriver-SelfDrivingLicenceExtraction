@@ -160,9 +160,9 @@ class HardTurner:
                     self.aligning = False
                     print('aligned')
             elif s > 0:
-                command.angular.z = -0.07
+                command.angular.z = -0.13
             elif s < 0:
-                command.angular.z = 0.07
+                command.angular.z = 0.13
             self.last_line  = s
             self.move_pub.publish(command)
         
@@ -211,7 +211,7 @@ def autopilot(image_data):
             rospy.logdebug("Robot Crossing.\n-----------------------")
             Steering.move_forwards(1.25)
             Redline.was_detected = False
-    elif LicenseNumber.detected == 1 and LicenseNumber.duration > 3 and Greenline.detected:
+    elif LicenseNumber.detected == 1 and LicenseNumber.duration >= 1 and Greenline.detected:
         Steering.stop()
         # aligned with turn into center
         ht.straight(0.2)
@@ -222,19 +222,23 @@ def autopilot(image_data):
         ht.align()
         # P7
         ht.left_turn()
-        ht.straight(0.35)
+        ht.straight(0.25)
         ht.right_turn()
-        ht.back(0.2)
+        ht.stop()
+        ht.back(0.8)
         # P8
-        ht.straight(1.7)
+        ht.straight(2.2)
         ht.right_turn()
         ht.straight(1.5)
         ht.align()
         ht.right_turn()
+        ht.straight(0.3)
         # Back Outside
         ht.left_turn()
         ht.back(0.2)
         ht.left_turn()
+        ht.back(1.2)
+        ht.align()
         ht.back(1)
         
     else:

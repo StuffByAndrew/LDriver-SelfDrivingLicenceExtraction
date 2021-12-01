@@ -6,7 +6,7 @@
     <node pkg="controller" type="green_line_detection.py" name="greenline"/>
     <node pkg="controller" type="red_line_detection.py" name="redline"/>
     <node pkg="controller" type="image2.py" name="image2"/>
-    <node pkg="controller" type="autopilot.py" name="autopilot" launch-prefix="bash -c 'sleep 3; $0 $@' "/>
+    <node pkg="controller" type="autopilot.py" name="autopilot" launch-prefix="bash -c 'sleep 4; $0 $@' "/>
     <node pkg="controller" type="scoring.py" name="scoring"/>
     
 </launch>
