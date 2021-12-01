@@ -280,7 +280,7 @@ def autopilot(image_data):
             and Greenline.detected \
                 and not Innerloop.detected\
                     and Lap.count > 1 \
-                        and Lap.count % 2 == 0:
+                        and Lap.count >= 2:
         Innerloop.detected = True
     else:
         if Innerloop.detected:
