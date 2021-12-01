@@ -54,11 +54,13 @@ class Steering_Control:
     
     def turn_left(self, interval):
         command = Twist()
-        command.linear.x = 0.2
+        command.linear.x = 0.19
         command.angular.z = 0.62    
         self.move_pub.publish(command)
         rospy.sleep(interval)
         self.slow_stop(0.2,0,1,5)
+        #---------------------
+        #self.stop()
     
     def stop(self):
         self.move_pub.publish(Twist())
