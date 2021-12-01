@@ -174,6 +174,7 @@ class HardTurner:
 class Detection:
     def __init__(self):
         self.detected = None
+        self.duration = 0
 
 def update_redline(detection):
     if detection.data:
@@ -188,6 +189,10 @@ def update_greenline(detection):
         Greenline.detected = False
 
 def update_license_number(detection):
+    if detection.data == LicenseNumber.detected:
+        LicenseNumber.duration += 1
+    else:
+        LicenseNumber.duration = 0
     LicenseNumber.detected = detection.data
 
 def update_image(image):
@@ -206,31 +211,32 @@ def autopilot(image_data):
             rospy.logdebug("Robot Crossing.\n-----------------------")
             Steering.move_forwards(1.25)
             Redline.was_detected = False
-    elif LicenseNumber.detected == 1 and Greenline.detected:
+    elif LicenseNumber.detected == 1 and LicenseNumber.duration > 3 and Greenline.detected:
         Steering.stop()
-        print('straight')
+        # aligned with turn into center
         ht.straight(0.2)
-        print('align')
         ht.align()
-        print('straight')
         ht.straight(0.2)
-        print('left')
         ht.left_turn()
         ht.back(0.4)
         ht.align()
+        # P7
         ht.left_turn()
-        ht.back(0.1)
         ht.straight(0.35)
         ht.right_turn()
-        ht.straight(1.5)
+        ht.back(0.2)
+        # P8
+        ht.straight(1.7)
         ht.right_turn()
         ht.straight(1.5)
         ht.align()
         ht.right_turn()
+        # Back Outside
         ht.left_turn()
         ht.back(0.2)
         ht.left_turn()
         ht.back(1)
+        
     else:
         Steering.auto_steer(image)
 
@@ -238,6 +244,7 @@ if __name__ == "__main__":
     rospy.init_node("autopilot", anonymous=True)
     move_pub = rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1)
     ht = HardTurner(move_pub)
+
     Steering = Steering_Control(0.20, 0.015, (0.6228, -44), move_pub)
     Pedestrian = Pedestrian_Detection(200, 3)
     Redline = Detection()

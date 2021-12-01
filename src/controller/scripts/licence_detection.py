@@ -62,7 +62,10 @@ class LicenceDetector:
             }
             print('recorded {} at {}'.format(self.best[p_space]['pred'], self.best[p_space]['conf']))
             publish_to_scoring(p_space)
+        
+        # Publish to Licence ID publisher for turning into the center decision
         lid_pub.publish(Int16(int(p_space)))
+
         # print horizontal line
         print(HOR_LINE)
     
