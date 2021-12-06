@@ -1,17 +1,21 @@
 #!/usr/bin/env python2
+from __future__ import print_function
+
 import cv2
 import time
 import rospy
 import numpy as np
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Bool, Int16
+from std_msgs.msg import Bool, Int16, String
 from cv_bridge import CvBridge, CvBridgeError
 from ldriver.steering.car_detection import robot_can_move, car_motion_detection
 from ldriver.steering.lane_detection import right_roadline_center, horizontal_distance_from_line
 from ldriver.steering.pedestrian_detection import pedestrian_crossing
 from ldriver.steering.road_detection import detect_gl
 from ldriver.steering.lane_detection import slope
+from scoring import format_message
+
 bridge = CvBridge()
 
 class Steering_Control:
@@ -204,9 +208,9 @@ class HardTurner:
                     self.aligning = False
                     print('aligned')
             elif s > 0:
-                command.angular.z = -0.13
+                command.angular.z = -0.2 #0.13 
             elif s < 0:
-                command.angular.z = 0.13
+                command.angular.z = 0.2
             self.last_line  = s
             self.move_pub.publish(command)
         
@@ -218,7 +222,7 @@ class HardTurner:
     def face_inwards(self):
         self.straight(0.2)
         self.align()
-        self.straight(0.2)
+        self.straight(0.35)
         self.left_turn()
         self.back(0.4)
         self.align()
@@ -226,20 +230,23 @@ class HardTurner:
     def execute_hardturn(self):
         # P7
         self.left_turn()
-        self.straight(0.22)
+        self.straight(0.18)
         self.right_turn()
         self.stop()
         self.back(0.8)
-        self.twist(dir=-0.5, dur=0.1)
+        self.twist(dir=0.45, dur=0.2)
         # P8
         self.straight(2.1)
         self.right_turn()
+        self.twist(dir=-0.5, dur=0.2)
         self.straight(1.5)
         self.align()
         self.right_turn()
+        self.twist(dir=-0.5, dur=0.3)
         self.straight(0.3)
         # Back Outside
         self.left_turn()
+        timer_pub.publish(end_msg)
         self.back(0.2)
         self.left_turn()
         self.back(1.2)
@@ -279,30 +286,18 @@ def autopilot(image_data):
         image = bridge.imgmsg_to_cv2(image_data, "bgr8")
     except CvBridgeError as e:
         print(e)
-    #-------
-<<<<<<< Updated upstream
+    #########################################
     # text = "LicenseNumber:{}, Duration:{}, Greenline:{}, Innerloop:{}".format(
     #     LicenseNumber.detected == 1,
-    #     LicenseNumber.duration > 1,
+    #     LicenseNumber.duration > 0,
     #     Greenline.detected,
     #     not Innerloop.detected
     # )
-    cv2.imshow("Robot_Cam", image)
-    # cv2.putText(image, str(cache), (20,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
-    # cv2.putText(image, text, (20,60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
-=======
-    text = "LicenseNumber:{}, Duration:{}, Greenline:{}, Innerloop:{}".format(
-        LicenseNumber.detected == 1,
-        LicenseNumber.duration > 0,
-        Greenline.detected,
-        not Innerloop.detected
-    )
-    cv2.imshow("image", image)
-    cv2.putText(image, str(cache), (20,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(image, text, (20,60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2, cv2.LINE_AA)
->>>>>>> Stashed changes
-    cv2.waitKey(1)
-    #--------
+    # cv2.putText(image, str(cache), (20,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    # cv2.putText(image, text, (20,60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    # cv2.imshow("image", image)
+    # cv2.waitKey(1)
+    #########################################
     if Redline.detected:
         Steering.stop()
         if Pedestrian.robot_should_cross(image):
@@ -313,7 +308,7 @@ def autopilot(image_data):
         and LicenseNumber.duration > 1 \
             and Greenline.detected \
                 and not Innerloop.detected \
-                    and Lap.count >= 1:
+                    and Lap.count >= -1:
         Innerloop.detected = True
     else:
         if Innerloop.detected:
@@ -330,11 +325,11 @@ def autopilot(image_data):
     
 
 if __name__ == "__main__":
-    rospy.init_node("autopilot", anonymous=True, log_level=rospy.DEBUG)
+    rospy.init_node("autopilot", log_level=rospy.DEBUG)
     move_pub = rospy.Publisher("/R1/cmd_vel", Twist, queue_size=1)
     ht = HardTurner(move_pub)
 
-    Steering = Steering_Control(0.23, 0.015, (0.6228, -44), move_pub)
+    Steering = Steering_Control(0.28, 0.02, (0.6228, -44), move_pub) # good: 0.23, Kp: 0.015
     Pedestrian = Pedestrian_Detection(200, 3)
     Redline = Detection()
     Greenline = Detection()
@@ -343,8 +338,13 @@ if __name__ == "__main__":
     Car = Car_Detection(100, 5)
     Innerloop = Detection()
     Lap = Detection()
-    
+
+    start_msg, end_msg = String(), String()
+    start_msg.data, end_msg.data = format_message(0,"0000"), format_message(-1,"0000")
+    timer_pub = rospy.Publisher("/license_plate", String, queue_size=1)
     rospy.sleep(0.5)
+    timer_pub.publish(start_msg)
+
     Steering.turn_left(3)
     
     image_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, autopilot, queue_size=1)

@@ -20,6 +20,8 @@ Upper: [40,150,18]
 @function_counter
 def car_motion_detection(current_image_input, previous_image, history):
     current_image = mask_rectangle(current_image_input, bottom=0.45, right=0.65)
+    cv2.imshow('car', current_image)
+    cv2.waitKey(1)
     current_image = hsv_threshold(current_image, lh=0, ls=0, lv=0, uh=40, us=150, uv=18)
     current_image = cv2.GaussianBlur(current_image, (21,21), 0)
     current_image = dilate_erode(current_image, 0, 5)

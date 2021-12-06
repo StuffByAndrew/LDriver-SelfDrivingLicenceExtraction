@@ -70,6 +70,8 @@ class LicenceDetector:
         print(HOR_LINE)
     
 def publish_scoring(plate_id, plate_num):
+    if plate_id == 0:
+        return
     scoring_pub.publish(str('{},{},{},{}').format(
         TEAM_NAME,
         TEAM_PWD,
@@ -79,16 +81,16 @@ def publish_scoring(plate_id, plate_num):
 
 
 if __name__ == '__main__':
-    rospy.init_node('licensedriver', anonymous=True)
+    rospy.init_node('licensedriver')
     ld = LicenceDetector()
     locr = LicenceOCR()
     bridge = CvBridge()
     scoring_pub = rospy.Publisher('/license_plate', String, queue_size=1)
     lid_pub = rospy.Publisher('/license_id', Int16, queue_size=1)
     rospy.sleep(1)
-    scoring_pub.publish(str('{},{},0,XR58').format(
-        TEAM_NAME,
-        TEAM_PWD
-    ))
+    # scoring_pub.publish(str('{},{},0,XR58').format(
+    #     TEAM_NAME,
+    #     TEAM_PWD
+    # ))
     rospy.Subscriber("/R1/pi_camera/image_raw", Image, ld.process_image)
     rospy.spin()

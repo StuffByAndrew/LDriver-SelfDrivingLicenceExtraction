@@ -13,3 +13,4 @@ plate_data/*
 plate_data
 *.json
 !ldriver/ldriver/data/licence/P.png
+.vscode
